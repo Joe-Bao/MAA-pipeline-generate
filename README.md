@@ -1,5 +1,7 @@
 # MAA Pipeline Generate
 
+[English](README.en.md) | 中文
+
 基于模板和数据源批量生成 MAA pipeline JSON，适用于需要大批量制作、仅有细微差异的 pipeline 场景。
 
 ## 特性
