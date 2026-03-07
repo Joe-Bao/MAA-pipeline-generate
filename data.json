@@ -1,0 +1,25 @@
+{
+    "outputPattern": "${Id}.json",
+    "data": [
+        {
+            "Id": "AncientTree",
+            "Name": "古树",
+            "ExpectedText": ["古树", "古樹", "Ancient Tree", "古木", "고목"],
+            "JumpBackNode": "[JumpBack]SceneEnterWorldWulingJingyuValley7",
+            "MapName": "map02_lv001",
+            "MapTarget": [280, 580, 15, 15],
+            "MapPath": [[302, 560], [304, 545], [339, 539], [368, 532], [372, 539], [364, 561], [353, 570]],
+            "CameraSwipeDirection": "EnvironmentMonitoringSwipeScreenUp"
+        },
+        {
+            "Id": "BeaconDamagedInBlightTide",
+            "Name": "侵蚀潮中损坏的信标",
+            "ExpectedText": ["侵蚀潮中损坏的信标", "侵蝕潮中損壞的信標", "Beacon Damaged in the Blight Tide", "侵蝕潮で壊れたビーコン", "침식 조류로 인해 훼손된 신호기"],
+            "JumpBackNode": "[JumpBack]SceneEnterWorldWulingWulingCity0",
+            "MapName": "map02_lv002",
+            "MapTarget": [640, 255, 15, 15],
+            "MapPath": [[640, 265], [640, 295], [623, 302], [640, 315], [658, 318], [667, 318], [672, 269]],
+            "CameraSwipeDirection": "EnvironmentMonitoringSwipeScreenDown"
+        }
+    ]
+}

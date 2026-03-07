@@ -1,0 +1,93 @@
+{
+    // ======== ${Id} 任务入口 ========
+    "${Id}Job": {
+        "desc": "${Name}任务",
+        "max_hit": 1,
+        "recognition": "And",
+        "all_of": [
+            "Check${Id}Text",
+            "Check${Id}ReadyText"
+        ],
+        "next": [
+            "Accept${Id}",
+            "GoTo${Id}Mission"
+        ]
+    },
+
+    // ======== 检查任务文本 ========
+    "Check${Id}Text": {
+        "desc": "检查是否有${Name}文本",
+        "recognition": "OCR",
+        "roi": [63, 208, 1158, 71],
+        "expected": "${ExpectedText}",
+        "order_by": "Expected"
+    },
+
+    // ======== 检查就绪文本 ========
+    "Check${Id}ReadyText": {
+        "desc": "检查${Name}是否就绪",
+        "recognition": "OCR",
+        "roi": [826, 208, 395, 71],
+        "expected": ["进行中", "進行中", "In Progress"]
+    },
+
+    // ======== 接受任务 ========
+    "Accept${Id}": {
+        "desc": "接受${Name}任务",
+        "recognition": "OCR",
+        "roi": [63, 208, 1158, 71],
+        "expected": "${ExpectedText}",
+        "action": "Click"
+    },
+
+    // ======== 前往任务 (地图导航) ========
+    "GoTo${Id}Mission": {
+        "desc": "前往${Name}任务地点",
+        "next": [
+            "${JumpBackNode}",
+            "${Id}OpenMap"
+        ]
+    },
+
+    // ======== 打开地图 ========
+    "${Id}OpenMap": {
+        "desc": "${Name} - 打开地图",
+        "recognition": "OCR",
+        "expected": ["${MapName}"],
+        "action": "Click",
+        "next": [
+            "${Id}MapNavigate"
+        ]
+    },
+
+    // ======== 地图导航 ========
+    "${Id}MapNavigate": {
+        "desc": "${Name} - 地图导航",
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": "${MapTarget}",
+        "next": [
+            "${Id}MapSwipe"
+        ]
+    },
+
+    // ======== 地图滑动路径 ========
+    "${Id}MapSwipe": {
+        "desc": "${Name} - 地图滑动",
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "swipes": "${MapPath}",
+        "next": [
+            "${CameraSwipeDirection}",
+            "${Id}MissionComplete"
+        ]
+    },
+
+    // ======== 任务完成 ========
+    "${Id}MissionComplete": {
+        "desc": "${Name}任务完成",
+        "recognition": "OCR",
+        "expected": ["完成", "完成", "Complete"],
+        "action": "Click"
+    }
+}

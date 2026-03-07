@@ -1,0 +1,10 @@
+{
+  "name": "maa-pipeline-generate",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nekosu/maa-pipeline-manager": "^1.0.5",
+    "jsonc-parser": "^3.3.1"
+  }
+}
