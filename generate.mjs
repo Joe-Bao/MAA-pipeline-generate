@@ -8,45 +8,26 @@ import { parseTask, parseObject } from '@nekosu/maa-pipeline-manager'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// ======================== 变量替换 ========================
+// ======================== 文本级变量替换 ========================
 
-function substitute(obj, vars) {
-  if (typeof obj === 'string') {
-    const fullMatch = obj.match(/^\$\{(\w+)\}$/)
-    if (fullMatch) {
-      const val = vars[fullMatch[1]]
-      if (val === undefined) return obj
-      return val
-    }
-    return obj.replace(/\$\{(\w+)\}/g, (original, key) => {
-      const val = vars[key]
-      if (val === undefined) return original
-      return typeof val === 'string' ? val : JSON.stringify(val)
-    })
-  }
+function substituteText(text, vars) {
+  // 第一步：整值占位符 "${Var}" (含引号) → JSON 值
+  // 匹配 "  ${Var}  " 形式，引号内只有占位符和可选空白
+  let result = text.replace(/"\s*\$\{(\w+)\}\s*"/g, (match, key) => {
+    const val = vars[key]
+    if (val === undefined) return match
+    if (typeof val === 'string') return JSON.stringify(val)
+    return JSON.stringify(val)
+  })
 
-  if (Array.isArray(obj)) {
-    return obj.map(item => substitute(item, vars))
-  }
+  // 第二步：剩余的 ${Var} → 字符串插值（键名、部分字符串等）
+  result = result.replace(/\$\{(\w+)\}/g, (original, key) => {
+    const val = vars[key]
+    if (val === undefined) return original
+    return typeof val === 'string' ? val : String(val)
+  })
 
-  if (typeof obj === 'object' && obj !== null) {
-    const result = {}
-    for (const [key, value] of Object.entries(obj)) {
-      const newKey = key.replace(/\$\{(\w+)\}/g, (original, k) => {
-        const val = vars[k]
-        if (val === undefined) return original
-        return typeof val === 'string' ? val : String(val)
-      })
-      result[newKey] = substitute(value, vars)
-    }
-    return result
-  }
-
-  return obj
-}
-
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj))
+  return result
 }
 
 function resolvePattern(pattern, vars) {
@@ -68,12 +49,23 @@ function parseJsonLoose(text) {
   return result
 }
 
+// ======================== 模板内容提取 ========================
+
+function extractInnerContent(text) {
+  const firstBrace = text.indexOf('{')
+  const lastBrace = text.lastIndexOf('}')
+  if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+    throw new Error('模板必须是一个 JSON 对象 { ... }')
+  }
+  return text.substring(firstBrace + 1, lastBrace)
+}
+
 // ======================== 语义校验 ========================
 
 function validatePipeline(jsonContent, filePath) {
   const issues = []
 
-  const tree = parseTree(jsonContent)
+  const tree = parseTree(jsonContent, undefined, { allowTrailingComma: true })
   if (!tree || tree.type !== 'object') {
     issues.push({ level: 'error', message: '无法解析为 JSON 对象' })
     return issues
@@ -146,6 +138,15 @@ function printIssues(issues, fileName) {
   }
 }
 
+function countTasks(jsoncText) {
+  try {
+    const obj = parseJsonLoose(jsoncText)
+    return typeof obj === 'object' && !Array.isArray(obj) ? Object.keys(obj).length : 0
+  } catch {
+    return 0
+  }
+}
+
 // ======================== 数据加载 ========================
 
 async function loadData(dataPath) {
@@ -202,7 +203,8 @@ async function generate(cliConfig = {}) {
   console.log(`[generate] 数据: ${dataPath}`)
 
   const templateText = await readFile(templatePath, 'utf-8')
-  const template = parseJsonLoose(templateText)
+
+  parseJsonLoose(templateText)
 
   const { dataArray, dataConfig } = await loadData(dataPath)
 
@@ -225,48 +227,37 @@ async function generate(cliConfig = {}) {
   if (outputPattern) {
     for (const entry of dataArray) {
       const fileName = resolvePattern(outputPattern, entry)
-      const fragment = substitute(deepClone(template), entry)
-      const jsonStr = JSON.stringify(fragment, null, 4) + '\n'
+      const outputText = substituteText(templateText, entry)
       const filePath = join(outputDir, fileName)
 
-      await writeFile(filePath, jsonStr, 'utf-8')
+      await writeFile(filePath, outputText, 'utf-8')
 
-      const taskCount = Object.keys(fragment).length
+      const taskCount = countTasks(outputText)
       totalTasks += taskCount
       console.log(`  → ${fileName} (${taskCount} 个任务节点)`)
 
-      const issues = validatePipeline(jsonStr, filePath)
+      const issues = validatePipeline(outputText, filePath)
       totalIssues += issues.length
       printIssues(issues, fileName)
     }
   } else {
-    const merged = {}
-    const conflicts = []
+    const innerTemplate = extractInnerContent(templateText)
+    const fragments = []
 
     for (const entry of dataArray) {
-      const fragment = substitute(deepClone(template), entry)
-      for (const key of Object.keys(fragment)) {
-        if (key in merged) conflicts.push(key)
-      }
-      Object.assign(merged, fragment)
+      fragments.push(substituteText(innerTemplate, entry))
     }
 
-    if (conflicts.length > 0) {
-      console.warn(`[generate] 警告: 以下键名存在冲突（后者覆盖前者）:`)
-      for (const k of [...new Set(conflicts)]) {
-        console.warn(`  - ${k}`)
-      }
-    }
-
+    const outputText = `{${fragments.join(',')}\n}\n`
     const fileName = 'pipeline.json'
     const filePath = join(outputDir, fileName)
-    const jsonStr = JSON.stringify(merged, null, 4) + '\n'
-    await writeFile(filePath, jsonStr, 'utf-8')
 
-    totalTasks = Object.keys(merged).length
+    await writeFile(filePath, outputText, 'utf-8')
+
+    totalTasks = countTasks(outputText)
     console.log(`  → ${fileName} (${totalTasks} 个任务节点)`)
 
-    const issues = validatePipeline(jsonStr, filePath)
+    const issues = validatePipeline(outputText, filePath)
     totalIssues += issues.length
     printIssues(issues, fileName)
   }
@@ -305,7 +296,7 @@ for (let i = 0; i < args.length; i++) {
   .json/.jsonc  JSON 数组 [{...}] 或带配置 { "outputPattern": "...", "data": [...] }
   .mjs          JS 模块，export default [...] 或 export const data = [...]
 
-所有 JSON/JSONC 文件均支持注释和尾逗号。
+模板中的注释 (// 和 /* */) 会保留到输出文件中。
 
 示例:
   node generate.mjs
