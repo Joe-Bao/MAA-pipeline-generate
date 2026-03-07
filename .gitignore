@@ -1,2 +1,4 @@
 node_modules
 output/
+template.jsonc
+data.json

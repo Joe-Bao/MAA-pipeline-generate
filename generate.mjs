@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { dirname, resolve, join, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { parseTree } from 'jsonc-parser'
+import { parse as parseJsonc, parseTree } from 'jsonc-parser'
 import { parseTask, parseObject } from '@nekosu/maa-pipeline-manager'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -55,6 +55,17 @@ function resolvePattern(pattern, vars) {
     if (val === undefined) return original
     return typeof val === 'string' ? val : String(val)
   })
+}
+
+// ======================== 宽松 JSON 解析 ========================
+
+function parseJsonLoose(text) {
+  const errors = []
+  const result = parseJsonc(text, errors, { allowTrailingComma: true })
+  if (result === undefined) {
+    throw new SyntaxError(`JSON 解析失败: ${errors.map(e => `offset ${e.offset}: error ${e.error}`).join(', ')}`)
+  }
+  return result
 }
 
 // ======================== 语义校验 ========================
@@ -142,7 +153,7 @@ async function loadData(dataPath) {
 
   if (ext === '.json' || ext === '.jsonc') {
     const text = await readFile(dataPath, 'utf-8')
-    const parsed = ext === '.jsonc' ? JSON.parse(stripJsoncComments(text)) : JSON.parse(text)
+    const parsed = parseJsonLoose(text)
 
     if (Array.isArray(parsed)) {
       return { dataArray: parsed, dataConfig: {} }
@@ -171,73 +182,27 @@ async function loadData(dataPath) {
   return { dataArray, dataConfig }
 }
 
-// ======================== 模板加载 ========================
-
-function loadTemplate(text) {
-  return JSON.parse(stripJsoncComments(text))
-}
-
-function stripJsoncComments(text) {
-  let result = ''
-  let i = 0
-  let inString = false
-  let escape = false
-
-  while (i < text.length) {
-    const ch = text[i]
-    const next = text[i + 1]
-
-    if (inString) {
-      result += ch
-      if (escape) {
-        escape = false
-      } else if (ch === '\\') {
-        escape = true
-      } else if (ch === '"') {
-        inString = false
-      }
-      i++
-      continue
-    }
-
-    if (ch === '"') {
-      inString = true
-      result += ch
-      i++
-      continue
-    }
-
-    if (ch === '/' && next === '/') {
-      while (i < text.length && text[i] !== '\n') i++
-      continue
-    }
-
-    if (ch === '/' && next === '*') {
-      i += 2
-      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i++
-      i += 2
-      continue
-    }
-
-    result += ch
-    i++
-  }
-
-  return result
-}
-
 // ======================== 主流程 ========================
 
 async function generate(cliConfig = {}) {
-  const defaultData = existsSync(resolve(__dirname, 'data.json')) ? 'data.json' : 'data.mjs'
-  const templatePath = resolve(__dirname, cliConfig.template ?? 'template.jsonc')
+  const defaultData = existsSync(resolve(__dirname, 'data.json'))
+    ? 'data.json'
+    : existsSync(resolve(__dirname, 'data.jsonc'))
+      ? 'data.jsonc'
+      : 'data.mjs'
+
+  const defaultTemplate = existsSync(resolve(__dirname, 'template.json'))
+    ? 'template.json'
+    : 'template.jsonc'
+
+  const templatePath = resolve(__dirname, cliConfig.template ?? defaultTemplate)
   const dataPath = resolve(__dirname, cliConfig.data ?? defaultData)
 
   console.log(`[generate] 模板: ${templatePath}`)
   console.log(`[generate] 数据: ${dataPath}`)
 
   const templateText = await readFile(templatePath, 'utf-8')
-  const template = loadTemplate(templateText)
+  const template = parseJsonLoose(templateText)
 
   const { dataArray, dataConfig } = await loadData(dataPath)
 
@@ -313,6 +278,7 @@ async function generate(cliConfig = {}) {
 
 const args = process.argv.slice(2)
 const config = {}
+const positional = []
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--template' && args[i + 1]) config.template = args[++i]
@@ -321,10 +287,14 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--output-pattern' && args[i + 1]) config.outputPattern = args[++i]
   else if (args[i] === '--merged') config.merged = true
   else if (args[i] === '--help') {
-    console.log(`用法: node generate.mjs [选项]
+    console.log(`用法: node generate.mjs [模板文件] [数据文件] [选项]
+
+位置参数:
+  第一个参数                  模板文件路径
+  第二个参数                  数据源文件路径
 
 选项:
-  --template <path>         模板文件路径 (默认: template.jsonc)
+  --template <path>         模板文件路径 (默认: template.json 或 template.jsonc)
   --data <path>             数据源文件路径 (默认: data.json 或 data.mjs)
   --output-dir <path>       输出目录 (默认: output/)
   --output-pattern <pat>    每条数据的输出文件名模式 (如 \${Id}.json)
@@ -332,15 +302,22 @@ for (let i = 0; i < args.length; i++) {
   --help                    显示帮助信息
 
 数据源格式:
-  .json  纯 JSON 数组，直接写 [{...}, {...}]
-  .mjs   JS 模块，export const data/questData = [...] 或 export default [...]
+  .json/.jsonc  JSON 数组 [{...}] 或带配置 { "outputPattern": "...", "data": [...] }
+  .mjs          JS 模块，export default [...] 或 export const data = [...]
+
+所有 JSON/JSONC 文件均支持注释和尾逗号。
 
 示例:
   node generate.mjs
-  node generate.mjs --data quests.json --output-pattern "\${Id}.json"
+  node generate.mjs quest_template.json quest_data.json
   node generate.mjs --merged`)
     process.exit(0)
+  } else if (!args[i].startsWith('--')) {
+    positional.push(args[i])
   }
 }
+
+if (positional[0] && !config.template) config.template = positional[0]
+if (positional[1] && !config.data) config.data = positional[1]
 
 generate(config)
