@@ -25,7 +25,7 @@ This downloads official portable Node into `node/`. **`start.bat` / `start.sh` p
 
 ## Releases and CI
 
-Pushing tag **`maa-generate-v*`** (e.g. `maa-generate-v1.0.0`) runs GitHub Actions (`.github/workflows/maa-pipeline-generate-release.yml`), runs **`npm ci --omit=dev`** on Windows / macOS / Linux, zips the tool (including production `node_modules`), and uploads the zips to the **GitHub Release for that tag**.
+In **this tool’s own repository**, pushing tag **`maa-generate-v*`** (e.g. `maa-generate-v1.0.0`) runs GitHub Actions (`.github/workflows/maa-pipeline-generate-release.yml` at the repo root), runs **`npm ci --omit=dev`** on Windows / macOS / Linux, zips the tool (including production `node_modules`), and uploads the zips to the **GitHub Release for that tag**. This workflow belongs to **this repo**, not the VS Code extension (maa-support-extension) monorepo.
 
 **workflow_dispatch** on the same workflow builds artifacts only (no Release).
 

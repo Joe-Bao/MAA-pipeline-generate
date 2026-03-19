@@ -25,9 +25,9 @@ node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 
 
 ## Release 与自动构建
 
-推送 **Git tag** `maa-generate-v主版本号`（例如 `maa-generate-v1.0.0`）会触发 GitHub Actions（`.github/workflows/maa-pipeline-generate-release.yml`），在 Windows / macOS / Linux 上分别 **`npm ci --omit=dev`** 并打 **便携 zip**（含生产依赖 `node_modules`），上传到 **同一 Tag 的 GitHub Release**。
+在本工具 **独立仓库** 推送 **Git tag** `maa-generate-v主版本号`（例如 `maa-generate-v1.0.0`）会触发 GitHub Actions（本仓库根目录下 `.github/workflows/maa-pipeline-generate-release.yml`），在 Windows / macOS / Linux 上分别 **`npm ci --omit=dev`** 并打 **便携 zip**（含生产依赖 `node_modules`），上传到 **同一 Tag 的 GitHub Release**。此工作流属于本仓库，**不**挂在 VS Code 扩展（maa-support-extension）主仓库上。
 
-手动触发：在 Actions 中选择 **MAA Pipeline Generate (Portable zip)** 工作流，使用 **Run workflow**（仅生成 Artifact，不创建 Release）。
+手动触发：在本仓库 Actions 中选择 **MAA Pipeline Generate (Portable zip)**，使用 **Run workflow**（仅生成 Artifact，不创建 Release）。
 
 ## 特性
 

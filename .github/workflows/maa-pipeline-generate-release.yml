@@ -1,0 +1,100 @@
+# 本工作流属于 MAA-pipeline-generator 独立仓库，不依赖上层 maa-support-extension / VS Code 扩展仓库。
+name: MAA Pipeline Generate (Portable zip)
+
+on:
+  push:
+    tags:
+      - 'maa-generate-v*'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            slug: win-x64
+          - os: macos-latest
+            slug: darwin-arm64
+          - os: ubuntu-latest
+            slug: linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG="${GITHUB_REF_NAME#maa-generate-v}"
+          npm pkg set version="$TAG"
+
+      - name: Pack portable zip
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            export PATH="/c/Program Files/Git/usr/bin:$PATH"
+          fi
+          rm -rf output dist-electron .maa-gen-tmp || true
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#maa-generate-v}"
+          else
+            VERSION="0.0.0-SNAPSHOT"
+          fi
+          OUT="${GITHUB_WORKSPACE}/maa-pipeline-generate-${VERSION}-${SLUG}.zip"
+          rm -f "$OUT"
+          zip -r "$OUT" . \
+            -x "output/*" -x "output" \
+            -x "dist-electron/*" -x "dist-electron" \
+            -x ".maa-gen-tmp/*" -x ".maa-gen-tmp" \
+            -x "node/*" -x "node" \
+            -x "scripts/.dl/*" -x "scripts/.dl" \
+            -x "*.zip"
+          ls -la "$OUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maa-generate-${{ matrix.slug }}
+          path: maa-pipeline-generate-*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: maa-generate-*
+          merge-multiple: true
+
+      - name: List release files
+        run: find release-assets -type f
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: MAA Pipeline Generate ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: release-assets/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
