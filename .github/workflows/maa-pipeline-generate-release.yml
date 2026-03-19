@@ -1,4 +1,8 @@
 # 本工作流属于 MAA-pipeline-generator 独立仓库，不依赖上层 maa-support-extension / VS Code 扩展仓库。
+#
+# Release 说明：
+# - push tag「maa-generate-v*」→ 会跑 build + release（创建 GitHub Release 并上传 zip）。
+# - workflow_dispatch（Actions 里手动 Run）→ 只跑 build，产物在 Artifacts；不会创建 Release。
 name: MAA Pipeline Generate (Portable zip)
 
 on:
@@ -126,3 +130,14 @@ jobs:
           files: release-assets/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 手动运行时没有 tag，release job 会被跳过；在摘要里明确提示，避免误以为「CI 没发 Release」。
+  manual-run-no-github-release:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain artifacts vs Release
+        run: |
+          echo "::notice::本次为手动触发：仅生成 Artifacts（各矩阵 job 的 maa-generate-*）。不会创建 GitHub Release。"
+          echo "::notice::要发布 Release：在默认分支上打 tag 并推送，例如：git tag maa-generate-v1.0.0 && git push origin maa-generate-v1.0.0"
