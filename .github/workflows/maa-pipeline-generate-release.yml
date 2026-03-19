@@ -46,26 +46,30 @@ jobs:
         if: runner.os == 'Windows'
         env:
           SLUG: ${{ matrix.slug }}
-        shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          Set-Location $env:GITHUB_WORKSPACE
-          foreach ($name in @('output', 'dist-electron', '.maa-gen-tmp', 'node')) {
-            if (Test-Path $name) { Remove-Item $name -Recurse -Force }
-          }
-          if (Test-Path 'scripts\.dl') { Remove-Item 'scripts\.dl' -Recurse -Force }
-          if ($env:GITHUB_REF -like 'refs/tags/*') {
-            $version = $env:GITHUB_REF_NAME -replace '^maa-generate-v', ''
-          } else {
-            $version = '0.0.0-SNAPSHOT'
-          }
-          $out = Join-Path $env:GITHUB_WORKSPACE "maa-pipeline-generate-${version}-$($env:SLUG).zip"
-          if (Test-Path $out) { Remove-Item $out -Force }
-          Get-ChildItem -File -Filter '*.zip' -Force | Remove-Item -Force
-          $items = @(Get-ChildItem -Force | Where-Object { $_.Name -notlike '*.zip' })
-          if ($items.Count -eq 0) { throw 'No files to pack' }
-          Compress-Archive -LiteralPath ($items | ForEach-Object { $_.FullName }) -DestinationPath $out -CompressionLevel Optimal -Force
-          Get-Item $out | Format-List FullName, Length
+          # tar.exe (libarchive) handles deep node_modules better than Compress-Archive on Windows.
+          rm -rf output dist-electron .maa-gen-tmp node scripts/.dl || true
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#maa-generate-v}"
+          else
+            VERSION="0.0.0-SNAPSHOT"
+          fi
+          OUT="${GITHUB_WORKSPACE}/maa-pipeline-generate-${VERSION}-${SLUG}.zip"
+          rm -f "$OUT"
+          rm -f *.zip 2>/dev/null || true
+          cd "$GITHUB_WORKSPACE"
+          TMPZIP="${RUNNER_TEMP}/maa-pipeline-pack-win.zip"
+          rm -f "$TMPZIP"
+          tar.exe -a -c -f "$TMPZIP" \
+            --exclude=output \
+            --exclude=dist-electron \
+            --exclude=.maa-gen-tmp \
+            --exclude=node \
+            --exclude=scripts/.dl \
+            --exclude='*.zip' \
+            .
+          mv -f "$TMPZIP" "$OUT"
+          ls -la "$OUT"
 
       - name: Pack portable zip (Unix)
         if: runner.os != 'Windows'
