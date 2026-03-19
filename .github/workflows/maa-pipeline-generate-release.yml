@@ -58,7 +58,8 @@ jobs:
           rm -f "$OUT"
           rm -f *.zip 2>/dev/null || true
           cd "$GITHUB_WORKSPACE"
-          TMPZIP="${RUNNER_TEMP}/maa-pipeline-pack-win.zip"
+          # tar.exe treats "D:..." in -f as remote "host:archive" — use a relative path (no drive letter).
+          TMPZIP="../._maa-pipeline-pack-${SLUG}.zip"
           rm -f "$TMPZIP"
           tar.exe -a -c -f "$TMPZIP" \
             --exclude=output \
