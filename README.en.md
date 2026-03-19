@@ -8,7 +8,7 @@ Batch-generate MAA pipeline JSON from templates and data sources. For scenarios 
 
 Use the **system browser + a tiny local HTTP server** (no Electron):
 
-1. Open the repo [Releases](https://github.com/neko-para/maa-support-extension/releases) and look for versions published from tag **`maa-generate-v*`**.
+1. Open this repository’s [Releases](https://github.com/Joe-Bao/MAA-pipeline-generate/releases) and look for versions published from tag **`maa-generate-v*`**.
 2. Download the **portable zip** for your platform (e.g. `maa-pipeline-generate-x.x.x-win-x64.zip`, `darwin-arm64`, or `linux-x64`) and extract it anywhere.
 3. **Node.js must be installed** (same platform as the bundled `node_modules`): run **`start.bat`** on Windows, or **`chmod +x start.sh && ./start.sh`** on macOS / Linux. This runs `node server.mjs` and opens your default browser (default URL `http://127.0.0.1:48765/`).
 4. Pick template and data files in the page, set options, then generate. Stop the server with **Ctrl+C** in the terminal window.

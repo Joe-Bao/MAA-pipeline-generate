@@ -42,13 +42,36 @@ jobs:
           TAG="${GITHUB_REF_NAME#maa-generate-v}"
           npm pkg set version="$TAG"
 
-      - name: Pack portable zip
+      - name: Pack portable zip (Windows)
+        if: runner.os == 'Windows'
+        env:
+          SLUG: ${{ matrix.slug }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-Location $env:GITHUB_WORKSPACE
+          foreach ($name in @('output', 'dist-electron', '.maa-gen-tmp', 'node')) {
+            if (Test-Path $name) { Remove-Item $name -Recurse -Force }
+          }
+          if (Test-Path 'scripts\.dl') { Remove-Item 'scripts\.dl' -Recurse -Force }
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
+            $version = $env:GITHUB_REF_NAME -replace '^maa-generate-v', ''
+          } else {
+            $version = '0.0.0-SNAPSHOT'
+          }
+          $out = Join-Path $env:GITHUB_WORKSPACE "maa-pipeline-generate-${version}-$($env:SLUG).zip"
+          if (Test-Path $out) { Remove-Item $out -Force }
+          Get-ChildItem -File -Filter '*.zip' -Force | Remove-Item -Force
+          $items = @(Get-ChildItem -Force | Where-Object { $_.Name -notlike '*.zip' })
+          if ($items.Count -eq 0) { throw 'No files to pack' }
+          Compress-Archive -LiteralPath ($items | ForEach-Object { $_.FullName }) -DestinationPath $out -CompressionLevel Optimal -Force
+          Get-Item $out | Format-List FullName, Length
+
+      - name: Pack portable zip (Unix)
+        if: runner.os != 'Windows'
         env:
           SLUG: ${{ matrix.slug }}
         run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            export PATH="/c/Program Files/Git/usr/bin:$PATH"
-          fi
           rm -rf output dist-electron .maa-gen-tmp || true
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF_NAME#maa-generate-v}"

@@ -8,7 +8,7 @@
 
 不想用命令行时，使用 **本机浏览器 + 小型 HTTP 服务**（无需 Electron）：
 
-1. 在仓库 [Releases](https://github.com/neko-para/maa-support-extension/releases) 中查找以 **`maa-generate-v*`** 发布的版本。
+1. 在本仓库 [Releases](https://github.com/Joe-Bao/MAA-pipeline-generate/releases) 中查找以 **`maa-generate-v*`** 发布的版本。
 2. 下载对应平台的 **便携 zip**（文件名形如 `maa-pipeline-generate-x.x.x-win-x64.zip` / `darwin-arm64` / `linux-x64`），解压到任意目录。
 3. **需已安装 Node.js**（与 zip 同平台 `node_modules` 一致）：双击 **`start.bat`**（Windows）或执行 **`chmod +x start.sh && ./start.sh`**（macOS / Linux）。脚本会启动 `node server.mjs`，并自动打开系统浏览器访问本机页面（默认 `http://127.0.0.1:48765/`）。
 4. 在网页中选择模板、数据文件，填写输出目录等选项后点击生成。结束服务：在运行窗口按 **Ctrl+C**。
