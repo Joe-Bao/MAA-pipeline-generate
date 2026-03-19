@@ -21,19 +21,6 @@ node scripts/download-portable-node.mjs win-x64   # or linux-x64 / darwin-x64 / 
 
 This downloads official portable Node into `node/`. **`start.bat` / `start.sh` prefer `node\node.exe` or `node/bin/node` when present.**
 
-## npm / npx (Node.js required)
-
-Use this **or** the portable zip—not both required. Package name: **`@joebao/maa-pipeline-generate`** (adjust the scope in `package.json` if your npm account differs).
-
-- **Global install**: `npm i -g @joebao/maa-pipeline-generate`  
-  - CLI: `maa-pipeline-generate --help`  
-  - Browser GUI: `maa-pipeline-generate-gui` (add `--no-open` to skip launching the browser)
-- **One-off run** (with multiple `bin` entries, pass the command name explicitly):
-  - `npx -p @joebao/maa-pipeline-generate maa-pipeline-generate -- --help`
-  - `npx -p @joebao/maa-pipeline-generate maa-pipeline-generate-gui`
-
-First publish: `npm login`, then `npm publish` from the package root (`publishConfig.access` is `public`).
-
 > If your fork uses different release naming, follow that repo’s **Tags / Releases** page.
 
 ## Releases and CI

@@ -21,19 +21,6 @@ node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 
 
 将把官方便携 Node 解压到目录下的 `node/`，之后 **`start.bat` / `start.sh` 会优先使用 `node\node.exe` 或 `node/bin/node`**。
 
-## npm / npx（需本机已装 Node）
-
-与便携 zip 二选一即可；包名为 **`@joebao/maa-pipeline-generate`**（发布前请确认 npm 作用域与账号一致）。
-
-- **全局安装**：`npm i -g @joebao/maa-pipeline-generate`  
-  - 命令行生成：`maa-pipeline-generate --help`  
-  - 打开浏览器 GUI：`maa-pipeline-generate-gui`（可加 `--no-open` 仅监听端口不自动开浏览器）
-- **临时运行（不全局安装）**（多 `bin` 时需指定命令名）：
-  - `npx -p @joebao/maa-pipeline-generate maa-pipeline-generate -- --help`
-  - `npx -p @joebao/maa-pipeline-generate maa-pipeline-generate-gui`
-
-首次发布：在包目录执行 `npm login` 后 `npm publish`（已配置 `publishConfig.access: public`）。
-
 > 若仓库 Release 命名或链接与上述不一致，请以实际仓库的 **Tags / Releases** 为准。
 
 ## Release 与自动构建

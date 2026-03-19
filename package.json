@@ -1,11 +1,34 @@
 {
-  "name": "maa-pipeline-generate",
+  "name": "@joebao/maa-pipeline-generate",
   "version": "1.0.0",
-  "private": true,
   "description": "Batch-generate MAA pipeline JSON from templates and data (CLI + browser GUI).",
   "author": "maa-support-extension",
   "type": "module",
   "main": "server.mjs",
+  "bin": {
+    "maa-pipeline-generate": "bin/maa-pipeline-generate.mjs",
+    "maa-pipeline-generate-gui": "bin/maa-pipeline-generate-gui.mjs"
+  },
+  "files": [
+    "bin/**/*.mjs",
+    "lib/**/*.mjs",
+    "public/**",
+    "scripts/download-portable-node.mjs",
+    "generate.mjs",
+    "server.mjs",
+    "start.bat",
+    "start.sh"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joe-Bao/MAA-pipeline-generate.git"
+  },
   "scripts": {
     "generate": "node generate.mjs",
     "start:gui": "node server.mjs",
