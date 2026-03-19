@@ -2,7 +2,16 @@
   "name": "maa-pipeline-generate",
   "version": "1.0.0",
   "private": true,
+  "description": "Batch-generate MAA pipeline JSON from templates and data (CLI + browser GUI).",
+  "author": "maa-support-extension",
   "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "start:gui": "node server.mjs",
+    "start:gui:no-open": "node server.mjs --no-open",
+    "download:node": "node scripts/download-portable-node.mjs"
+  },
   "dependencies": {
     "@nekosu/maa-pipeline-manager": "^1.0.5",
     "jsonc-parser": "^3.3.1"

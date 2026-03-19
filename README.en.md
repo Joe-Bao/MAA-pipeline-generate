@@ -4,6 +4,31 @@
 
 Batch-generate MAA pipeline JSON from templates and data sources. For scenarios where you need to produce many pipelines that share the same structure with only small differences.
 
+## Graphical UI (recommended)
+
+Use the **system browser + a tiny local HTTP server** (no Electron):
+
+1. Open the repo [Releases](https://github.com/neko-para/maa-support-extension/releases) and look for versions published from tag **`maa-generate-v*`**.
+2. Download the **portable zip** for your platform (e.g. `maa-pipeline-generate-x.x.x-win-x64.zip`, `darwin-arm64`, or `linux-x64`) and extract it anywhere.
+3. **Node.js must be installed** (same platform as the bundled `node_modules`): run **`start.bat`** on Windows, or **`chmod +x start.sh && ./start.sh`** on macOS / Linux. This runs `node server.mjs` and opens your default browser (default URL `http://127.0.0.1:48765/`).
+4. Pick template and data files in the page, set options, then generate. Stop the server with **Ctrl+C** in the terminal window.
+
+**Optional fully portable bundle** (no global Node): from a machine that already has Node, in the extracted folder run:
+
+```bash
+node scripts/download-portable-node.mjs win-x64   # or linux-x64 / darwin-x64 / darwin-arm64
+```
+
+This downloads official portable Node into `node/`. **`start.bat` / `start.sh` prefer `node\node.exe` or `node/bin/node` when present.**
+
+> If your fork uses different release naming, follow that repo’s **Tags / Releases** page.
+
+## Releases and CI
+
+Pushing tag **`maa-generate-v*`** (e.g. `maa-generate-v1.0.0`) runs GitHub Actions (`.github/workflows/maa-pipeline-generate-release.yml`), runs **`npm ci --omit=dev`** on Windows / macOS / Linux, zips the tool (including production `node_modules`), and uploads the zips to the **GitHub Release for that tag**.
+
+**workflow_dispatch** on the same workflow builds artifacts only (no Release).
+
 ## Features
 
 - Template-driven: Use `${Var}` placeholders in templates, values are filled automatically
@@ -12,8 +37,9 @@ Batch-generate MAA pipeline JSON from templates and data sources. For scenarios 
 - Semantic validation: Uses `@nekosu/maa-pipeline-manager`'s `parseTask` for semantic analysis
 - Per-entry output: Each data entry can generate a separate file, filename supports variables (e.g. `${Id}.json`)
 - Supports JSON / JSONC (comments and trailing commas)
+- **Browser GUI**: `server.mjs` serves the UI and `/api/generate`, same core as the CLI (`lib/runGenerate.mjs`)
 
-## Quick Start
+## Quick Start (CLI)
 
 ```bash
 # Install dependencies
@@ -21,18 +47,41 @@ npm install
 
 # Run (uses default template.jsonc + data.json)
 node generate.mjs
+# or
+npm run generate
 ```
 
 Output is written to `output/`.
 
+## Run GUI from source
+
+```bash
+npm install
+npm run start:gui
+```
+
+Do not auto-open the browser (e.g. headless):
+
+```bash
+npm run start:gui:no-open
+# or
+node server.mjs --no-open
+```
+
 ## Files
 
-| File | Purpose |
+| Path | Purpose |
 |------|---------|
-| `generate.mjs` | Generator script |
+| `generate.mjs` | CLI entry |
+| `lib/runGenerate.mjs` | Core generator (CLI + browser GUI) |
+| `server.mjs` | Local HTTP server + open default browser |
+| `public/` | Browser UI (HTML / CSS / JS) |
+| `start.bat` / `start.sh` | Launch helper (prefers bundled `node/` if present) |
+| `scripts/download-portable-node.mjs` | Optional: download official portable Node into `node/` |
 | `template.jsonc` | Template file with `${Var}` placeholders |
 | `data.json` | Data source with variable values per entry |
 | `output/` | Output directory |
+| `.maa-gen-tmp/` | Temp files for browser generate (auto-created, gitignored) |
 
 ## Template
 

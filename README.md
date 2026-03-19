@@ -4,6 +4,31 @@
 
 基于模板和数据源批量生成 MAA pipeline JSON，适用于需要大批量制作、仅有细微差异的 pipeline 场景。
 
+## 图形界面（推荐）
+
+不想用命令行时，使用 **本机浏览器 + 小型 HTTP 服务**（无需 Electron）：
+
+1. 在仓库 [Releases](https://github.com/neko-para/maa-support-extension/releases) 中查找以 **`maa-generate-v*`** 发布的版本。
+2. 下载对应平台的 **便携 zip**（文件名形如 `maa-pipeline-generate-x.x.x-win-x64.zip` / `darwin-arm64` / `linux-x64`），解压到任意目录。
+3. **需已安装 Node.js**（与 zip 同平台 `node_modules` 一致）：双击 **`start.bat`**（Windows）或执行 **`chmod +x start.sh && ./start.sh`**（macOS / Linux）。脚本会启动 `node server.mjs`，并自动打开系统浏览器访问本机页面（默认 `http://127.0.0.1:48765/`）。
+4. 在网页中选择模板、数据文件，填写输出目录等选项后点击生成。结束服务：在运行窗口按 **Ctrl+C**。
+
+**可选：自带 Node 的绿色包**（解压即可用，无需全局 Node）：在已安装 Node 的机器上进入解压目录，执行：
+
+```bash
+node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 / darwin-arm64
+```
+
+将把官方便携 Node 解压到目录下的 `node/`，之后 **`start.bat` / `start.sh` 会优先使用 `node\node.exe` 或 `node/bin/node`**。
+
+> 若仓库 Release 命名或链接与上述不一致，请以实际仓库的 **Tags / Releases** 为准。
+
+## Release 与自动构建
+
+推送 **Git tag** `maa-generate-v主版本号`（例如 `maa-generate-v1.0.0`）会触发 GitHub Actions（`.github/workflows/maa-pipeline-generate-release.yml`），在 Windows / macOS / Linux 上分别 **`npm ci --omit=dev`** 并打 **便携 zip**（含生产依赖 `node_modules`），上传到 **同一 Tag 的 GitHub Release**。
+
+手动触发：在 Actions 中选择 **MAA Pipeline Generate (Portable zip)** 工作流，使用 **Run workflow**（仅生成 Artifact，不创建 Release）。
+
 ## 特性
 
 - 模板驱动：用 `${Var}` 占位符编写模板，自动填充数据
@@ -12,8 +37,9 @@
 - 语义校验：基于 `@nekosu/maa-pipeline-manager` 的 `parseTask` 对生成结果做语义分析
 - 独立文件输出：每条数据生成独立文件，文件名支持变量（如 `${Id}.json`）
 - 支持 JSON / JSONC（含注释和尾逗号）
+- **浏览器 GUI**：`server.mjs` 提供静态页与 `/api/generate`，与 CLI 共用 `lib/runGenerate.mjs`
 
-## 快速开始
+## 快速开始（命令行）
 
 ```bash
 # 安装依赖
@@ -21,18 +47,41 @@ npm install
 
 # 运行（使用默认的 template.jsonc + data.json）
 node generate.mjs
+# 或
+npm run generate
 ```
 
 生成结果在 `output/` 目录下。
 
+## 从源码运行 GUI
+
+```bash
+npm install
+npm run start:gui
+```
+
+不自动打开浏览器（例如在无图形界面环境）：
+
+```bash
+npm run start:gui:no-open
+# 或
+node server.mjs --no-open
+```
+
 ## 文件说明
 
-| 文件 | 作用 |
-|------|------|
-| `generate.mjs` | 生成器核心脚本 |
+| 文件 / 目录 | 作用 |
+|-------------|------|
+| `generate.mjs` | 命令行入口 |
+| `lib/runGenerate.mjs` | 生成核心（CLI 与浏览器 GUI 共用） |
+| `server.mjs` | 本机 HTTP 服务 + 自动打开浏览器 |
+| `public/` | 浏览器界面（HTML / CSS / JS） |
+| `start.bat` / `start.sh` | 一键启动（优先使用目录内便携 `node/`） |
+| `scripts/download-portable-node.mjs` | 可选：下载官方便携 Node 到 `node/` |
 | `template.jsonc` | 模板文件，用 `${Var}` 作为占位符 |
 | `data.json` | 数据源，包含每条数据的变量值 |
 | `output/` | 生成结果输出目录 |
+| `.maa-gen-tmp/` | 浏览器生成时的临时文件目录（自动创建，已 gitignore） |
 
 ## 模板编写
 
