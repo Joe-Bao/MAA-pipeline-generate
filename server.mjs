@@ -98,7 +98,8 @@ async function handleGenerate(body) {
   try {
     const result = await runGenerate(
       {
-        baseDir: root,
+        // 与 CLI 一致：相对输出目录等相对于用户启动服务时的 cwd（npx 下不是包目录）
+        baseDir: process.cwd(),
         template: tplPath,
         data: dataPath,
         outputDir: payload.outputDir || undefined,

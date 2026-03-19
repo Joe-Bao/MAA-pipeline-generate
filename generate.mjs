@@ -1,9 +1,4 @@
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { runGenerate } from './lib/runGenerate.mjs'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const args = process.argv.slice(2)
 const config = {}
@@ -16,11 +11,14 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--output-pattern' && args[i + 1]) config.outputPattern = args[++i]
   else if (args[i] === '--merged') config.merged = true
   else if (args[i] === '--help') {
-    console.log(`用法: node generate.mjs [模板文件] [数据文件] [选项]
+    console.log(`用法: maa-pipeline-generate [模板文件] [数据文件] [选项]
+       或: node generate.mjs ...
 
 位置参数:
   第一个参数                  模板文件路径
   第二个参数                  数据源文件路径
+
+相对路径均相对于当前工作目录（与 npx / 全局安装一致）；也可用绝对路径。
 
 选项:
   --template <path>         模板文件路径 (默认: template.json 或 template.jsonc)
@@ -37,9 +35,9 @@ for (let i = 0; i < args.length; i++) {
 模板中的注释 (// 和 /* */) 会保留到输出文件中。
 
 示例:
-  node generate.mjs
-  node generate.mjs quest_template.json quest_data.json
-  node generate.mjs --merged`)
+  maa-pipeline-generate
+  maa-pipeline-generate quest_template.json quest_data.json
+  npx -p @joebao/maa-pipeline-generate maa-pipeline-generate ./tools/.../template.jsonc ./tools/.../data.json`)
     process.exit(0)
   } else if (!args[i].startsWith('--')) {
     positional.push(args[i])
@@ -49,7 +47,7 @@ for (let i = 0; i < args.length; i++) {
 if (positional[0] && !config.template) config.template = positional[0]
 if (positional[1] && !config.data) config.data = positional[1]
 
-config.baseDir = __dirname
+config.baseDir = process.cwd()
 
 runGenerate(config).catch(err => {
   console.error(err.message || err)
