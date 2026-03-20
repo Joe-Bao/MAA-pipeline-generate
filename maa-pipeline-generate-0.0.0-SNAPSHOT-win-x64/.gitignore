@@ -1,9 +1,0 @@
-node_modules
-output/
-dist-electron/
-template.jsonc
-data.json
-.maa-gen-tmp/
-scripts/.dl/
-# 本地下载的便携 Node（可选）
-node/
