@@ -1,6 +1,6 @@
 {
   "name": "@joebao/maa-pipeline-generate",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Batch-generate MAA pipeline JSON from templates and data (CLI + browser GUI).",
   "author": "maa-support-extension",
   "type": "module",
@@ -11,7 +11,10 @@
   },
   "files": [
     "bin/**/*.mjs",
+    "config.json",
     "lib/**/*.mjs",
+    "template.jsonc",
+    "data.json",
     "public/**",
     "scripts/download-portable-node.mjs",
     "generate.mjs",

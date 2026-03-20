@@ -10,6 +10,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--output-dir' && args[i + 1]) config.outputDir = args[++i]
   else if (args[i] === '--output-pattern' && args[i + 1]) config.outputPattern = args[++i]
   else if (args[i] === '--merged') config.merged = true
+  else if (args[i] === '--config' && args[i + 1]) config.configPath = args[++i]
   else if (args[i] === '--help') {
     console.log(`用法: maa-pipeline-generate [模板文件] [数据文件] [选项]
        或: node generate.mjs ...
@@ -25,6 +26,7 @@ for (let i = 0; i < args.length; i++) {
   --data <path>             数据源文件路径 (默认: data.json 或 data.mjs)
   --output-dir <path>       输出目录 (默认: output/)
   --output-pattern <pat>    每条数据的输出文件名模式 (如 \${Id}.json)
+  --config <path>          使用 config.json（默认从包内置读取）
   --merged                  强制合并输出为单个 pipeline.json
   --help                    显示帮助信息
 

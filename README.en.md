@@ -50,6 +50,7 @@ In **this tool’s own repository**, pushing tag **`maa-generate-v*`** (e.g. `ma
 - Semantic validation: Uses `@nekosu/maa-pipeline-manager`'s `parseTask` for semantic analysis
 - Per-entry output: Each data entry can generate a separate file, filename supports variables (e.g. `${Id}.json`)
 - Supports JSON / JSONC (comments and trailing commas)
+- Output is automatically formatted: all `[...]` arrays are expanded to multi-line form (no inline arrays on the same line)
 - **Browser GUI**: `server.mjs` serves the UI and `/api/generate`, same core as the CLI (`lib/runGenerate.mjs`)
 
 ## Quick Start (CLI)
@@ -65,6 +66,28 @@ npm run generate
 ```
 
 Output is written to `output/`.
+
+### config.json (optional)
+
+By default, the program reads `./config.json` from your current working directory; if it does not exist, it falls back to the `config.json` bundled inside this npm package. It controls template/data/output and output behavior:
+
+- `template`、`data`: the template (`template.jsonc`) and data source (`data.json`)
+- `outputDir`: default `output/` (relative to the run directory)
+- `format`: default `true` (forces all `[...]` arrays to be multi-line; no inline arrays on the same line)
+- `merged`: default `false` (without `--merged`, it generates `${Id}.json`; with `--merged` or `merged=true`, it generates the merged `pipeline.json`)
+- Numeric literal preservation: when the template uses `"${Var}"` as the whole value, number literals from `data.json` (e.g. `5.0`) are preserved as-is (not folded into `5`)
+
+To specify a custom config file:
+
+```bash
+node generate.mjs --config ./config.json
+```
+
+#### Local quick verification
+
+- Default run: `node generate.mjs`
+- Check formatting: make sure output arrays like `expected/next/roi/...` are multi-line and not inline `[...]` on the same line
+- Check `5.0` preservation: change a numeric literal in `data.json` to something like `5.0` and re-run; confirm the output still contains `5.0` (especially when the template uses `"${Var}"` as the whole value)
 
 ## Run GUI from source
 

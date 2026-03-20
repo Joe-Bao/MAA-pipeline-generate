@@ -1,0 +1,7 @@
+{
+    "template": "template.jsonc",
+    "data": "data.json",
+    "outputDir": "output",
+    "format": true,
+    "merged": false
+}

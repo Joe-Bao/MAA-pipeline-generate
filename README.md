@@ -50,6 +50,7 @@ node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 
 - 语义校验：基于 `@nekosu/maa-pipeline-manager` 的 `parseTask` 对生成结果做语义分析
 - 独立文件输出：每条数据生成独立文件，文件名支持变量（如 `${Id}.json`）
 - 支持 JSON / JSONC（含注释和尾逗号）
+- 输出 JSON 会自动格式化：所有 `[...]` 数组都会强制换行输出，不会生成同一行内联数组
 - **浏览器 GUI**：`server.mjs` 提供静态页与 `/api/generate`，与 CLI 共用 `lib/runGenerate.mjs`
 
 ## 快速开始（命令行）
@@ -65,6 +66,28 @@ npm run generate
 ```
 
 生成结果在 `output/` 目录下。
+
+### config.json（可选）
+
+默认情况下，程序会读取当前工作目录下的 `config.json`；如果不存在，则使用 npm 包内置的 `config.json`。你可以用它控制模板/数据/输出目录，以及输出行为：
+
+- `template`、`data`：分别对应模板 `template.jsonc` 与数据源 `data.json`
+- `outputDir`：默认 `output/`（相对运行目录）
+- `format`：默认 `true`（会把 `[...]` 数组强制为多行，不生成同一行内联数组）
+- `merged`：默认 `false`（不传 `--merged` 时生成 `${Id}.json`；传 `--merged` 或设置 `merged=true` 时生成合并后的 `pipeline.json`）
+- 数值保真：当模板中使用 `"${Var}"` 作为整值占位符时，来自 `data.json` 的数字字面（例如 `5.0`）会保持原样，不会被折叠成 `5`
+
+若要指定自定义配置文件：
+
+```bash
+node generate.mjs --config ./config.json
+```
+
+#### 本地快速验证
+
+- 默认运行：`node generate.mjs`
+- 检查数组格式：确认输出里的 `expected/next/roi/...` 等数组不再出现在同一行内联 `[...]`
+- 检查 `5.0` 保真：把你的 `data.json` 中某个数字改成 `5.0`（或类似带小数结尾的数），再运行，确认输出中仍显示 `5.0`（尤其是当占位符以 `"${Var}"` 作为整值替换时）
 
 ## 从源码运行 GUI
 
