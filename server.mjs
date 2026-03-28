@@ -98,7 +98,6 @@ async function handleGenerate(body) {
   try {
     const result = await runGenerate(
       {
-        // 与 CLI 一致：相对输出目录等相对于用户启动服务时的 cwd（npx 下不是包目录）
         baseDir: process.cwd(),
         template: tplPath,
         data: dataPath,
@@ -117,6 +116,36 @@ async function handleGenerate(body) {
     await rm(tplPath, { force: true }).catch(() => {})
     await rm(dataPath, { force: true }).catch(() => {})
   }
+}
+
+async function handleAutoCollect(body) {
+  let params
+  try {
+    params = JSON.parse(body)
+  } catch {
+    throw new Error('JSON 无效')
+  }
+
+  const { generateAutoCollect } = await import('./lib/generateAutoCollect.mjs')
+  const logs = []
+
+  logs.push({ level: 'log', message: `[auto-collect] 导航方式: ${params.Map_way}` })
+  logs.push({ level: 'log', message: `[auto-collect] 路线编号: ${params.route_id}` })
+
+  const { fileName, content } = generateAutoCollect(params)
+
+  const outputDir = params.outputDir
+    ? join(process.cwd(), params.outputDir)
+    : join(root, 'output')
+
+  await mkdir(outputDir, { recursive: true })
+  const filePath = join(outputDir, fileName)
+  await writeFile(filePath, content, 'utf8')
+
+  logs.push({ level: 'log', message: `[auto-collect] 已生成: ${filePath}` })
+  logs.push({ level: 'log', message: `[auto-collect] 完成!` })
+
+  return { ok: true, fileName, content, logs }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -144,6 +173,21 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readBody(req)
       const out = await handleGenerate(body)
+      res.writeHead(200)
+      res.end(JSON.stringify(out))
+    } catch (e) {
+      res.writeHead(400)
+      res.end(JSON.stringify({ ok: false, error: e.message || String(e) }))
+    }
+    return
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/generate-auto-collect') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    try {
+      const body = await readBody(req)
+      const out = await handleAutoCollect(body)
       res.writeHead(200)
       res.end(JSON.stringify(out))
     } catch (e) {

@@ -51,7 +51,8 @@ In **this tool’s own repository**, pushing tag **`maa-generate-v*`** (e.g. `ma
 - Per-entry output: Each data entry can generate a separate file, filename supports variables (e.g. `${Id}.json`)
 - Supports JSON / JSONC (comments and trailing commas)
 - Output is automatically formatted: all `[...]` arrays are expanded to multi-line form (no inline arrays on the same line)
-- **Browser GUI**: `server.mjs` serves the UI and `/api/generate`, same core as the CLI (`lib/runGenerate.mjs`)
+- **AutoCollect Route Generation**: Generate complete auto-collect route pipelines from structured parameters, supporting both MapNavigate and MapTracker navigation modes
+- **Browser GUI**: `server.mjs` serves the UI and `/api/generate`, with tabs for "Template Generate" and "AutoCollect Route"
 
 ## Quick Start (CLI)
 
@@ -108,8 +109,9 @@ node server.mjs --no-open
 
 | Path | Purpose |
 |------|---------|
-| `generate.mjs` | CLI entry |
-| `lib/runGenerate.mjs` | Core generator (CLI + browser GUI) |
+| `generate.mjs` | CLI entry (template generate + `--auto-collect` route generate) |
+| `lib/runGenerate.mjs` | Template generation core (CLI + browser GUI) |
+| `lib/generateAutoCollect.mjs` | AutoCollect route generation core |
 | `server.mjs` | Local HTTP server + open default browser |
 | `public/` | Browser UI (HTML / CSS / JS) |
 | `start.bat` / `start.sh` | Launch helper (prefers bundled `node/` if present) |
@@ -118,6 +120,117 @@ node server.mjs --no-open
 | `data.json` | Data source with variable values per entry |
 | `output/` | Output directory |
 | `.maa-gen-tmp/` | Temp files for browser generate (auto-created, gitignored) |
+
+## AutoCollect Route Generation
+
+For MaaEnd auto-collect scenarios, generate a complete route pipeline JSON from structured parameters (no template needed). Supports **MapNavigate** and **MapTracker** navigation modes.
+
+### Input Parameters
+
+#### Required
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `Map_way` | string | Navigation mode | `"MapNavigate"` or `"MapTracker"` |
+| `route_id` | number | Route number, used for node name prefix and filename | `4` |
+| `teleport_name` | string | Teleport point name | `"WulingWulingCity5"` |
+| `map_name` | string | Map name | `"map02_lv002"` |
+| `zone_id` | string | Navigation zone ID (**required for MapNavigate**) | `"Wuling_Base"` |
+| `assert_target` | [x, y] | Teleport landing verification coordinates, auto-expanded to `[x-10, y-10, 20, 20]` | `[663, 733]` |
+| `initial_path` | array | Full navigation path from teleport to first collect point | `[[654, 723], [656, 723], [645, 650, true]]` |
+| `collect_points` | array | List of subsequent collect point coordinates | `[[647, 648], [647, 646], [643, 642]]` |
+
+#### Optional
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `collect_action_entry` | string | `"AutoCollectClickStart"` | Action entry after each collect point |
+
+### CLI Usage
+
+Prepare a JSON input file (e.g. `route_input.json`):
+
+```json
+{
+    "Map_way": "MapNavigate",
+    "route_id": 1,
+    "teleport_name": "WulingWulingCity5",
+    "map_name": "map02_lv002",
+    "zone_id": "Wuling_Base",
+    "assert_target": [663, 733],
+    "initial_path": [
+        [654, 723],
+        [656, 723],
+        [645, 650, true]
+    ],
+    "collect_points": [
+        [647, 648],
+        [647, 646],
+        [643, 642]
+    ]
+}
+```
+
+Run:
+
+```bash
+node generate.mjs --auto-collect route_input.json
+node generate.mjs --auto-collect route_input.json --output-dir ./pipeline
+```
+
+Output filename is `AutoCollectRoute{route_id}.json` (e.g. `AutoCollectRoute1.json`).
+
+### Browser GUI Usage
+
+After starting the GUI, click the **"AutoCollect Route"** tab at the top, fill in the parameters, and click **"Generate Route Pipeline"**. The result is shown in a preview area and written to the output directory.
+
+### Generated Pipeline Structure
+
+For `route_id = 1` with 3 collect points, the pipeline contains:
+
+| Node | Purpose |
+|------|---------|
+| `AutoCollectRoute1Start` | Entry node, links to location assert and teleport |
+| `AutoCollectRoute1End` | Route end node |
+| `AutoCollectRoute1AssertLocation` | Verify teleport landing coordinates |
+| `AutoCollectRoute1GotoFind1` | Navigate along `initial_path` to first collect point |
+| `AutoCollectRoute1GotoFind2` | Navigate to second collect point |
+| `AutoCollectRoute1GotoFind3` | Navigate to third collect point |
+| `AutoCollectRoute1GotoFind4` | Navigate to fourth collect point (last, links to End) |
+
+### Navigation Mode Differences
+
+| Aspect | MapNavigate | MapTracker |
+|--------|-------------|------------|
+| Custom action | `MapNavigateAction` | `MapTrackerMove` |
+| Path prefix | Each path starts with `{ "action": "ZONE", "zone_id": "..." }` | None |
+| Extra param | None | `"fine_approach": "AllTargets"` |
+| `zone_id` | Required | Not needed |
+
+### MapTracker Example
+
+```json
+{
+    "Map_way": "MapTracker",
+    "route_id": 4,
+    "teleport_name": "WulingWulingCity2",
+    "map_name": "map02_lv002",
+    "assert_target": [632, 535],
+    "initial_path": [
+        [635.0, 537.0],
+        [630.0, 533.3],
+        [586.3, 533.2],
+        [532.5, 472.0]
+    ],
+    "collect_points": [
+        [530.1, 465.7],
+        [528.8, 469.6],
+        [523.8, 473.1]
+    ]
+}
+```
+
+---
 
 ## Template
 
@@ -244,6 +357,7 @@ Options:
   --output-dir <path>         Output directory (default: output/)
   --output-pattern <pat>      Output filename pattern
   --merged                    Merge output into single pipeline.json
+  --auto-collect <path>       Generate AutoCollect route pipeline from JSON input
   --help                      Show help
 ```
 

@@ -9,33 +9,93 @@
   <body>
     <header>
       <h1>MAA Pipeline Generate</h1>
-      <p class="sub">本机服务 · 仅监听 127.0.0.1 · 在下方选择模板与数据文件（内容将上传到本机 Node 进程）</p>
+      <p class="sub">本机服务 · 仅监听 127.0.0.1 · 在下方选择模式并填写参数</p>
     </header>
 
-    <section class="card">
-      <div class="field">
-        <label for="tplFile">模板文件 (.json / .jsonc)</label>
-        <input type="file" id="tplFile" accept=".json,.jsonc,.txt" />
-      </div>
-      <div class="field">
-        <label for="dataFile">数据文件 (.json / .jsonc)</label>
-        <input type="file" id="dataFile" accept=".json,.jsonc,.txt" />
-      </div>
-      <div class="field">
-        <label for="outputDir">输出目录（相对程序目录或绝对路径）</label>
-        <input type="text" id="outputDir" placeholder="默认: output" />
-      </div>
-      <div class="field">
-        <label for="outputPattern">输出文件名模式（可选，覆盖 data 内配置）</label>
-        <input type="text" id="outputPattern" placeholder="例如: ${Id}.json" />
-      </div>
-      <div class="field row">
-        <input type="checkbox" id="merged" />
-        <label for="merged">强制合并为单个 pipeline.json</label>
-      </div>
-      <button type="button" id="btnRun">开始生成</button>
-    </section>
+    <nav class="tabs">
+      <button class="tab active" data-tab="template">模板生成</button>
+      <button class="tab" data-tab="autocollect">AutoCollect 路线</button>
+    </nav>
 
+    <!-- ===== 模板生成 (原有功能) ===== -->
+    <div id="panel-template" class="panel">
+      <section class="card">
+        <div class="field">
+          <label for="tplFile">模板文件 (.json / .jsonc)</label>
+          <input type="file" id="tplFile" accept=".json,.jsonc,.txt" />
+        </div>
+        <div class="field">
+          <label for="dataFile">数据文件 (.json / .jsonc)</label>
+          <input type="file" id="dataFile" accept=".json,.jsonc,.txt" />
+        </div>
+        <div class="field">
+          <label for="outputDir">输出目录（相对程序目录或绝对路径）</label>
+          <input type="text" id="outputDir" placeholder="默认: output" />
+        </div>
+        <div class="field">
+          <label for="outputPattern">输出文件名模式（可选，覆盖 data 内配置）</label>
+          <input type="text" id="outputPattern" placeholder="例如: ${Id}.json" />
+        </div>
+        <div class="field row">
+          <input type="checkbox" id="merged" />
+          <label for="merged">强制合并为单个 pipeline.json</label>
+        </div>
+        <button type="button" id="btnRun">开始生成</button>
+      </section>
+    </div>
+
+    <!-- ===== AutoCollect 路线生成 ===== -->
+    <div id="panel-autocollect" class="panel hidden">
+      <section class="card">
+        <div class="field">
+          <label for="acMapWay">导航方式</label>
+          <select id="acMapWay">
+            <option value="MapNavigate">MapNavigate（地图导航）</option>
+            <option value="MapTracker">MapTracker（路径追踪）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="acRouteId">路线编号 (route_id)</label>
+          <input type="number" id="acRouteId" min="1" value="1" />
+        </div>
+        <div class="field">
+          <label for="acTeleportName">传送点名称 (teleport_name)</label>
+          <input type="text" id="acTeleportName" placeholder="例如: WulingWulingCity5" />
+        </div>
+        <div class="field">
+          <label for="acMapName">地图名 (map_name)</label>
+          <input type="text" id="acMapName" placeholder="例如: map02_lv002" />
+        </div>
+        <div class="field" id="acZoneIdField">
+          <label for="acZoneId">导航区域 ID (zone_id) — MapNavigate 必填</label>
+          <input type="text" id="acZoneId" placeholder="例如: Wuling_Base" />
+        </div>
+        <div class="field">
+          <label for="acAssertTarget">传送落点校验坐标 (assert_target) — [x, y]</label>
+          <input type="text" id="acAssertTarget" placeholder="例如: [663, 733]" />
+        </div>
+        <div class="field">
+          <label for="acInitialPath">初始路径 (initial_path) — JSON 数组</label>
+          <textarea id="acInitialPath" rows="5" placeholder='例如: [[654, 723], [656, 723], [645, 650, true]]'></textarea>
+        </div>
+        <div class="field">
+          <label for="acCollectPoints">采集点列表 (collect_points) — JSON 数组</label>
+          <textarea id="acCollectPoints" rows="5" placeholder='例如: [[647, 648], [647, 646], [643, 642]]'></textarea>
+        </div>
+        <div class="field">
+          <label for="acCollectAction">采集动作入口 (collect_action_entry，可选)</label>
+          <input type="text" id="acCollectAction" placeholder="默认: AutoCollectClickStart" />
+        </div>
+        <button type="button" id="btnAutoCollect">生成路线 Pipeline</button>
+      </section>
+
+      <section class="card" id="acPreviewCard" style="display:none">
+        <label>生成预览</label>
+        <textarea id="acPreview" readonly></textarea>
+      </section>
+    </div>
+
+    <!-- ===== 共用日志区域 ===== -->
     <section class="card">
       <label for="log">日志</label>
       <textarea id="log" readonly></textarea>

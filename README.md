@@ -51,7 +51,8 @@ node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 
 - 独立文件输出：每条数据生成独立文件，文件名支持变量（如 `${Id}.json`）
 - 支持 JSON / JSONC（含注释和尾逗号）
 - 输出 JSON 会自动格式化：所有 `[...]` 数组都会强制换行输出，不会生成同一行内联数组
-- **浏览器 GUI**：`server.mjs` 提供静态页与 `/api/generate`，与 CLI 共用 `lib/runGenerate.mjs`
+- **AutoCollect 路线生成**：从结构化参数一键生成完整的自动采集路线 pipeline，支持 MapNavigate / MapTracker 两种导航模式
+- **浏览器 GUI**：`server.mjs` 提供静态页与 `/api/generate`，与 CLI 共用 `lib/runGenerate.mjs`；GUI 内含"模板生成"和"AutoCollect 路线"两个标签页
 
 ## 快速开始（命令行）
 
@@ -108,8 +109,9 @@ node server.mjs --no-open
 
 | 文件 / 目录 | 作用 |
 |-------------|------|
-| `generate.mjs` | 命令行入口 |
-| `lib/runGenerate.mjs` | 生成核心（CLI 与浏览器 GUI 共用） |
+| `generate.mjs` | 命令行入口（模板生成 + `--auto-collect` 路线生成） |
+| `lib/runGenerate.mjs` | 模板生成核心（CLI 与浏览器 GUI 共用） |
+| `lib/generateAutoCollect.mjs` | AutoCollect 路线生成核心 |
 | `server.mjs` | 本机 HTTP 服务 + 自动打开浏览器 |
 | `public/` | 浏览器界面（HTML / CSS / JS） |
 | `start.bat` / `start.sh` | 一键启动（优先使用目录内便携 `node/`） |
@@ -118,6 +120,117 @@ node server.mjs --no-open
 | `data.json` | 数据源，包含每条数据的变量值 |
 | `output/` | 生成结果输出目录 |
 | `.maa-gen-tmp/` | 浏览器生成时的临时文件目录（自动创建，已 gitignore） |
+
+## AutoCollect 路线生成
+
+针对 MaaEnd 自动采集场景，从结构化参数直接生成完整的路线 pipeline JSON（无需编写模板）。支持 **MapNavigate**（地图导航）和 **MapTracker**（路径追踪）两种导航模式。
+
+### 输入参数
+
+#### 必填参数
+
+| 参数名 | 类型 | 说明 | 示例 |
+|--------|------|------|------|
+| `Map_way` | string | 导航方式 | `"MapNavigate"` 或 `"MapTracker"` |
+| `route_id` | number | 路线编号，用于生成节点名前缀和文件名 | `4` |
+| `teleport_name` | string | 传送点名称（万能跳转） | `"WulingWulingCity5"` |
+| `map_name` | string | 地图名 | `"map02_lv002"` |
+| `zone_id` | string | 导航区域 ID（**MapNavigate 必填**） | `"Wuling_Base"` |
+| `assert_target` | [x, y] | 传送落点校验坐标，自动补成 `[x-10, y-10, 20, 20]` | `[663, 733]` |
+| `initial_path` | array | 从传送点到第一个采集点的完整导航路径 | `[[654, 723], [656, 723], [645, 650, true]]` |
+| `collect_points` | array | 后续采集点坐标列表 | `[[647, 648], [647, 646], [643, 642]]` |
+
+#### 可选参数
+
+| 参数名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `collect_action_entry` | string | `"AutoCollectClickStart"` | 每个采集点执行后的跳转入口 |
+
+### 命令行用法
+
+准备一个 JSON 参数文件（如 `route_input.json`）：
+
+```json
+{
+    "Map_way": "MapNavigate",
+    "route_id": 1,
+    "teleport_name": "WulingWulingCity5",
+    "map_name": "map02_lv002",
+    "zone_id": "Wuling_Base",
+    "assert_target": [663, 733],
+    "initial_path": [
+        [654, 723],
+        [656, 723],
+        [645, 650, true]
+    ],
+    "collect_points": [
+        [647, 648],
+        [647, 646],
+        [643, 642]
+    ]
+}
+```
+
+运行：
+
+```bash
+node generate.mjs --auto-collect route_input.json
+node generate.mjs --auto-collect route_input.json --output-dir ./pipeline
+```
+
+生成的文件名为 `AutoCollectRoute{route_id}.json`（如 `AutoCollectRoute1.json`）。
+
+### 浏览器 GUI 用法
+
+启动 GUI 后，点击顶部的 **"AutoCollect 路线"** 标签页，填写各参数后点击 **"生成路线 Pipeline"**。生成结果会在预览区域显示，同时写入输出目录。
+
+### 生成结果说明
+
+以 `route_id = 1`、3 个采集点为例，生成的 pipeline 包含以下节点：
+
+| 节点名 | 作用 |
+|--------|------|
+| `AutoCollectRoute1Start` | 入口节点，跳转到位置校验和传送 |
+| `AutoCollectRoute1End` | 路线结束节点 |
+| `AutoCollectRoute1AssertLocation` | 校验传送落点坐标 |
+| `AutoCollectRoute1GotoFind1` | 沿 `initial_path` 前往第一个采集点 |
+| `AutoCollectRoute1GotoFind2` | 前往第二个采集点 |
+| `AutoCollectRoute1GotoFind3` | 前往第三个采集点 |
+| `AutoCollectRoute1GotoFind4` | 前往第四个采集点（最后一个，链接到 End） |
+
+### 两种导航模式的区别
+
+| 方面 | MapNavigate | MapTracker |
+|------|-------------|------------|
+| 自定义动作 | `MapNavigateAction` | `MapTrackerMove` |
+| 路径前缀 | 每段 path 首元素为 `{ "action": "ZONE", "zone_id": "..." }` | 无 |
+| 额外参数 | 无 | `"fine_approach": "AllTargets"` |
+| `zone_id` | 必填 | 不需要 |
+
+### MapTracker 示例
+
+```json
+{
+    "Map_way": "MapTracker",
+    "route_id": 4,
+    "teleport_name": "WulingWulingCity2",
+    "map_name": "map02_lv002",
+    "assert_target": [632, 535],
+    "initial_path": [
+        [635.0, 537.0],
+        [630.0, 533.3],
+        [586.3, 533.2],
+        [532.5, 472.0]
+    ],
+    "collect_points": [
+        [530.1, 465.7],
+        [528.8, 469.6],
+        [523.8, 473.1]
+    ]
+}
+```
+
+---
 
 ## 模板编写
 
@@ -244,6 +357,7 @@ node generate.mjs [模板文件] [数据文件] [选项]
   --output-dir <path>       输出目录 (默认: output/)
   --output-pattern <pat>    输出文件名模式
   --merged                  合并输出为单个 pipeline.json
+  --auto-collect <path>     从 JSON 参数文件生成 AutoCollect 路线 pipeline
   --help                    显示帮助信息
 ```
 
