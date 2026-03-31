@@ -7,7 +7,8 @@
   "main": "server.mjs",
   "bin": {
     "maa-pipeline-generate": "bin/maa-pipeline-generate.mjs",
-    "maa-pipeline-generate-gui": "bin/maa-pipeline-generate-gui.mjs"
+    "maa-pipeline-generate-gui": "bin/maa-pipeline-generate-gui.mjs",
+    "maa-pipeline-generate-task": "bin/maa-pipeline-generate-task.mjs"
   },
   "files": [
     "bin/**/*.mjs",
@@ -18,6 +19,7 @@
     "public/**",
     "scripts/download-portable-node.mjs",
     "generate.mjs",
+    "generate-task.mjs",
     "server.mjs",
     "start.bat",
     "start.sh"
@@ -34,6 +36,7 @@
   },
   "scripts": {
     "generate": "node generate.mjs",
+    "generate:task": "node generate-task.mjs",
     "start:gui": "node server.mjs",
     "start:gui:no-open": "node server.mjs --no-open",
     "download:node": "node scripts/download-portable-node.mjs"

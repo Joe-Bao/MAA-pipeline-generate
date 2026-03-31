@@ -52,6 +52,7 @@ node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 
 - 支持 JSON / JSONC（含注释和尾逗号）
 - 输出 JSON 会自动格式化：所有 `[...]` 数组都会强制换行输出，不会生成同一行内联数组
 - **AutoCollect 路线生成**：从结构化参数一键生成完整的自动采集路线 pipeline，支持 MapNavigate / MapTracker 两种导航模式
+- **Task 增量批量生成**：独立命令把 task 片段批量合并进单个目标文件，适合 `SellProduct.json` 这类高重复结构
 - **浏览器 GUI**：`server.mjs` 提供静态页与 `/api/generate`，与 CLI 共用 `lib/runGenerate.mjs`；GUI 内含"模板生成"和"AutoCollect 路线"两个标签页
 
 ## 快速开始（命令行）
@@ -64,6 +65,11 @@ npm install
 node generate.mjs
 # 或
 npm run generate
+
+# task 增量批量模式（独立命令，智能 mjs 模板）
+node generate-task.mjs --template ./examples/task/template.smart.mjs --data ./examples/task/data.smart.mjs
+# 或
+npm run generate:task -- --template ./examples/task/template.smart.mjs --data ./examples/task/data.smart.mjs
 ```
 
 生成结果在 `output/` 目录下。
@@ -76,6 +82,7 @@ npm run generate
 - `outputDir`：默认 `output/`（相对运行目录）
 - `format`：默认 `true`（会把 `[...]` 数组强制为多行，不生成同一行内联数组）
 - `merged`：默认 `false`（不传 `--merged` 时生成 `${Id}.json`；传 `--merged` 或设置 `merged=true` 时生成合并后的 `pipeline.json`）
+- `taskTemplate`、`taskData`、`taskTarget`：task 增量模式的模板、数据和目标文件默认路径（可被 `generate-task.mjs` 参数覆盖）
 - 数值保真：当模板中使用 `"${Var}"` 作为整值占位符时，来自 `data.json` 的数字字面（例如 `5.0`）会保持原样，不会被折叠成 `5`
 
 若要指定自定义配置文件：
@@ -110,14 +117,18 @@ node server.mjs --no-open
 | 文件 / 目录 | 作用 |
 |-------------|------|
 | `generate.mjs` | 命令行入口（模板生成 + `--auto-collect` 路线生成） |
+| `generate-task.mjs` | task 增量批量模式命令行入口 |
 | `lib/runGenerate.mjs` | 模板生成核心（CLI 与浏览器 GUI 共用） |
 | `lib/generateAutoCollect.mjs` | AutoCollect 路线生成核心 |
+| `lib/runTaskGenerate.mjs` | task 增量批量生成核心（按 key 覆盖合并） |
 | `server.mjs` | 本机 HTTP 服务 + 自动打开浏览器 |
 | `public/` | 浏览器界面（HTML / CSS / JS） |
 | `start.bat` / `start.sh` | 一键启动（优先使用目录内便携 `node/`） |
 | `scripts/download-portable-node.mjs` | 可选：下载官方便携 Node 到 `node/` |
 | `template.jsonc` | 模板文件，用 `${Var}` 作为占位符 |
 | `data.json` | 数据源，包含每条数据的变量值 |
+| `examples/pipeline/` | pipeline 示例模板与示例数据（统一示例入口） |
+| `examples/task/` | task 智能模板与示例数据（统一示例入口） |
 | `output/` | 生成结果输出目录 |
 | `.maa-gen-tmp/` | 浏览器生成时的临时文件目录（自动创建，已 gitignore） |
 
@@ -229,6 +240,83 @@ node generate.mjs --auto-collect route_input.json --output-dir ./pipeline
     ]
 }
 ```
+
+## Task 增量批量生成（独立模式）
+
+适合 `SellProduct.json` 这种在同一文件内大量重复、只需要增量维护局部片段的场景。  
+该模式不会走 pipeline 语义校验逻辑，也不会影响现有 `generate.mjs` 的行为。
+
+### 命令行用法
+
+```bash
+# 位置参数
+node generate-task.mjs task_template.jsonc task_data.jsonc target_task.json
+
+# 或显式参数
+node generate-task.mjs --template task_template.jsonc --data task_data.jsonc --target target_task.json
+```
+
+### 全部选项
+
+```
+node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
+
+位置参数:
+  第一个参数                  task 模板文件路径
+  第二个参数                  task 数据源文件路径
+  第三个参数                  目标 task 文件路径
+
+选项:
+  --template <path>          task 模板文件路径
+  --data <path>              task 数据源文件路径
+  --target <path>            目标 task 文件路径（单文件增量合并）
+  --config <path>            配置文件路径（支持 taskTemplate/taskData/taskTarget）
+  --no-format                关闭输出格式化
+  --dry-run                  仅计算与预览，不写入目标文件
+  --help                     显示帮助信息
+```
+
+### 数据源格式
+
+- `.json/.jsonc`：数组 `[{...}]`，或对象 `{ "target": "...", "data": [...] }`
+- `.mjs`：`export default [...]` 或 `export const data = [...]`
+- 单条数据可设置 `"enabled": false`（或 `"Enabled": false`）跳过生成
+
+### 模板格式
+
+- `.json/.jsonc`：占位符模板（`${Var}`），适合简单片段
+- `.mjs`：代码模板，导出 `default` / `render` / `buildTaskFragment`
+  - 签名：`(entry, helpers) => ({ task, option })`
+  - 适合 `SellProduct` 这类高重复结构（可在模板中用循环和函数生成）
+
+### 合并规则（默认覆盖）
+
+- `task` 数组：按 `task.name` 覆盖（同名替换，未命中追加）
+- `option` 对象：按 `option[key]` 覆盖（同 key 替换）
+- 这保证你可以只生成“本次新增/修改”的一部分，再合并到已有大文件
+
+### 示例（统一结构）
+
+- pipeline 示例模板：`examples/pipeline/template.default.jsonc`
+- pipeline 示例数据：`examples/pipeline/data.default.json`
+- task 智能模板：`examples/task/template.smart.mjs`
+- task 智能数据：`examples/task/data.smart.mjs`
+- 运行：
+
+```bash
+node generate-task.mjs --template ./examples/task/template.smart.mjs --data ./examples/task/data.smart.mjs
+```
+
+这个示例会用 `LOCATIONS + items` 自动展开：
+- 区域开关
+- 点位开关
+- Attempt1~4
+- Item1~4 的 select cases（含 `pipeline_override.expected`）
+
+分层建议（已在示例中实践）：
+- `template.smart.mjs`：只放“规则”（结构生成逻辑、默认开关策略）
+- `data.smart.mjs`：只放“数据”（locations、items、itemCatalog.expected 等）
+- 当业务文本/物品池更新时，优先改 `data.smart.mjs`，尽量不改模板函数
 
 ---
 
