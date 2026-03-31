@@ -1,0 +1,205 @@
+{
+    "task": [
+        {
+            "name": "${TaskName}",
+            "label": "${TaskLabel}",
+            "entry": "${TaskEntry}",
+            "description": "${TaskDescription}",
+            // 任务入口层：region 开关列表（会按 task.name 合并去重）
+            "option": "${RegionTaskOptionIds}",
+            "group": "${TaskGroup}"
+        }
+    ],
+    "option": {
+        // ===== Region 层 =====
+        "${RegionPrefix}Sell": {
+            "type": "switch",
+            "label": "${RegionLabel}",
+            "description": "$task.SellProduct.regionToggleDescription",
+            "default_case": "Yes",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SellProduct${RegionPrefix}": {
+                            "enabled": true
+                        }
+                    },
+                    "option": "${RegionLocationIds}"
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SellProduct${RegionPrefix}": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+
+        // ===== Location 层 =====
+        "${RegionPrefix}${LocationId}": {
+            "type": "switch",
+            "label": "$task.SellProduct.${RegionPrefix}${LocationId}",
+            "default_case": "Yes",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}": {
+                            "enabled": true
+                        }
+                    },
+                    "option": [
+                        "${RegionPrefix}${LocationId}Attempt1",
+                        "${RegionPrefix}${LocationId}Attempt2",
+                        "${RegionPrefix}${LocationId}Attempt3",
+                        "${RegionPrefix}${LocationId}Attempt4"
+                    ]
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+
+        // ===== Attempt 层 =====
+        "${RegionPrefix}${LocationId}Attempt1": {
+            "type": "switch",
+            "label": "$task.SellProduct.SellAttempt1",
+            "description": "$task.SellProduct.SellAttemptDescription",
+            "default_case": "${Attempt1DefaultCase}",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt1": {
+                            "enabled": true
+                        }
+                    },
+                    "option": [
+                        "${RegionPrefix}${LocationId}Item1"
+                    ]
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt1": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "${RegionPrefix}${LocationId}Attempt2": {
+            "type": "switch",
+            "label": "$task.SellProduct.SellAttempt2",
+            "default_case": "${Attempt2DefaultCase}",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt2": {
+                            "enabled": true
+                        }
+                    },
+                    "option": [
+                        "${RegionPrefix}${LocationId}Item2"
+                    ]
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt2": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "${RegionPrefix}${LocationId}Attempt3": {
+            "type": "switch",
+            "label": "$task.SellProduct.SellAttempt3",
+            "default_case": "${Attempt3DefaultCase}",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt3": {
+                            "enabled": true
+                        }
+                    },
+                    "option": [
+                        "${RegionPrefix}${LocationId}Item3"
+                    ]
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt3": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "${RegionPrefix}${LocationId}Attempt4": {
+            "type": "switch",
+            "label": "$task.SellProduct.SellAttempt4",
+            "default_case": "${Attempt4DefaultCase}",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt4": {
+                            "enabled": true
+                        }
+                    },
+                    "option": [
+                        "${RegionPrefix}${LocationId}Item4"
+                    ]
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SellProduct${NodePrefix}SellAttempt4": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+
+        // ===== Item Select 层 =====
+        "${RegionPrefix}${LocationId}Item1": {
+            "type": "select",
+            "label": "$task.SellProduct.PriorityItem1",
+            "default_case": "无",
+            "cases": "${ItemCases1}"
+        },
+        "${RegionPrefix}${LocationId}Item2": {
+            "type": "select",
+            "label": "$task.SellProduct.PriorityItem2",
+            "default_case": "无",
+            "cases": "${ItemCases2}"
+        },
+        "${RegionPrefix}${LocationId}Item3": {
+            "type": "select",
+            "label": "$task.SellProduct.PriorityItem3",
+            "default_case": "无",
+            "cases": "${ItemCases3}"
+        },
+        "${RegionPrefix}${LocationId}Item4": {
+            "type": "select",
+            "label": "$task.SellProduct.PriorityItem4",
+            "default_case": "无",
+            "cases": "${ItemCases4}"
+        }
+    }
+}

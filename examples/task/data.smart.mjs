@@ -112,17 +112,75 @@ const LOCATIONS_VALLEY_IV = [
   }
 ]
 
-export default [
-  {
-    name: 'ValleyIV-smart',
-    taskName: 'SellProduct',
-    taskEntry: 'SellProductMain',
-    taskLabel: '$task.SellProduct.label',
-    taskDescription: '$task.SellProduct.description',
-    taskGroup: ['daily'],
-    regionPrefix: 'ValleyIV',
-    regionLabel: '$global.region.ValleyIV',
-    locations: LOCATIONS_VALLEY_IV,
-    itemCatalog: ITEM_CATALOG
+// ===== 规则参数（可配置，但仍属于数据输入）=====
+const ATTEMPT_DEFAULT_CASE = {
+  1: 'Yes',
+  2: 'Yes',
+  3: 'No',
+  4: 'No'
+}
+
+function buildItemCases(nodePrefix, attemptIndex, items) {
+  const selectNode = `SellProduct${nodePrefix}SelectItem${attemptIndex}`
+  const result = [
+    {
+      name: '无',
+      pipeline_override: {
+        [selectNode]: { enabled: false }
+      }
+    }
+  ]
+
+  for (const itemId of items) {
+    const item = ITEM_CATALOG[itemId]
+    if (!item) continue
+    result.push({
+      name: item.name,
+      pipeline_override: {
+        [selectNode]: {
+          enabled: true,
+          expected: item.expected
+        }
+      },
+      label: item.label
+    })
   }
+
+  return result
+}
+
+// 由 location 数据展开为 template.smart.jsonc 所需扁平字段。
+function buildEntryFromLocation(regionPrefix, regionLabel, location, regionLocations) {
+  return {
+    name: `${regionPrefix}-${location.LocationId}`,
+    TaskName: 'SellProduct',
+    TaskEntry: 'SellProductMain',
+    TaskLabel: '$task.SellProduct.label',
+    TaskDescription: '$task.SellProduct.description',
+    TaskGroup: ['daily'],
+
+    RegionPrefix: regionPrefix,
+    RegionLabel: regionLabel,
+    RegionTaskOptionIds: [`${regionPrefix}Sell`],
+    RegionLocationIds: regionLocations.map(loc => `${loc.RegionPrefix}${loc.LocationId}`),
+
+    LocationId: location.LocationId,
+    NodePrefix: location.NodePrefix,
+
+    Attempt1DefaultCase: ATTEMPT_DEFAULT_CASE[1],
+    Attempt2DefaultCase: ATTEMPT_DEFAULT_CASE[2],
+    Attempt3DefaultCase: ATTEMPT_DEFAULT_CASE[3],
+    Attempt4DefaultCase: ATTEMPT_DEFAULT_CASE[4],
+
+    ItemCases1: buildItemCases(location.NodePrefix, 1, location.items),
+    ItemCases2: buildItemCases(location.NodePrefix, 2, location.items),
+    ItemCases3: buildItemCases(location.NodePrefix, 3, location.items),
+    ItemCases4: buildItemCases(location.NodePrefix, 4, location.items)
+  }
+}
+
+export default [
+  ...LOCATIONS_VALLEY_IV.map(location =>
+    buildEntryFromLocation('ValleyIV', '$global.region.ValleyIV', location, LOCATIONS_VALLEY_IV)
+  )
 ]

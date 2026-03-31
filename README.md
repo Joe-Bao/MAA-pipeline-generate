@@ -66,10 +66,10 @@ node generate.mjs
 # 或
 npm run generate
 
-# task 增量批量模式（独立命令，智能 mjs 模板）
-node generate-task.mjs --template ./examples/task/template.smart.mjs --data ./examples/task/data.smart.mjs
+# task 增量批量模式（独立命令，层级可读的 jsonc 模板）
+node generate-task.mjs --template ./examples/task/template.smart.jsonc --data ./examples/task/data.smart.mjs
 # 或
-npm run generate:task -- --template ./examples/task/template.smart.mjs --data ./examples/task/data.smart.mjs
+npm run generate:task -- --template ./examples/task/template.smart.jsonc --data ./examples/task/data.smart.mjs
 ```
 
 生成结果在 `output/` 目录下。
@@ -284,7 +284,7 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
 
 ### 模板格式
 
-- `.json/.jsonc`：占位符模板（`${Var}`），适合简单片段
+- `.json/.jsonc`：占位符模板（`${Var}`），适合展示清晰层级结构（推荐 task 场景）
 - `.mjs`：代码模板，导出 `default` / `render` / `buildTaskFragment`
   - 签名：`(entry, helpers) => ({ task, option })`
   - 适合 `SellProduct` 这类高重复结构（可在模板中用循环和函数生成）
@@ -299,24 +299,24 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
 
 - pipeline 示例模板：`examples/pipeline/template.default.jsonc`
 - pipeline 示例数据：`examples/pipeline/data.default.json`
-- task 智能模板：`examples/task/template.smart.mjs`
+- task 智能模板：`examples/task/template.smart.jsonc`
 - task 智能数据：`examples/task/data.smart.mjs`
 - 运行：
 
 ```bash
-node generate-task.mjs --template ./examples/task/template.smart.mjs --data ./examples/task/data.smart.mjs
+node generate-task.mjs --template ./examples/task/template.smart.jsonc --data ./examples/task/data.smart.mjs
 ```
 
-这个示例会用 `LOCATIONS + items` 自动展开：
+这个示例会保留 `Region -> Location -> Attempt -> Item` 层级在 template 中：
 - 区域开关
 - 点位开关
 - Attempt1~4
 - Item1~4 的 select cases（含 `pipeline_override.expected`）
 
 分层建议（已在示例中实践）：
-- `template.smart.mjs`：只放“规则”（结构生成逻辑、默认开关策略）
-- `data.smart.mjs`：只放“数据”（locations、items、itemCatalog.expected 等）
-- 当业务文本/物品池更新时，优先改 `data.smart.mjs`，尽量不改模板函数
+- `template.smart.jsonc`：保留可读层级结构（让人一眼看出生成后的结构）
+- `data.smart.mjs`：放业务数据与重复数据展开（locations、items、expected 等）
+- 当业务文本/物品池更新时，优先改 `data.smart.mjs`；当层级结构变更时再改 template
 
 ---
 
