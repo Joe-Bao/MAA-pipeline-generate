@@ -78,12 +78,13 @@ npm run generate:task -- --template ./examples/task/template.smart.jsonc --data 
 
 默认情况下，程序会读取当前工作目录下的 `config.json`；如果不存在，则使用 npm 包内置的 `config.json`。你可以用它控制模板/数据/输出目录，以及输出行为：
 
-- `template`、`data`：分别对应模板 `template.jsonc` 与数据源 `data.json`
-- `outputDir`：默认 `output/`（相对运行目录）
+- `template`、`data`：模板与数据路径（pipeline / task 通用）
+- `outputDir`：输出目录（pipeline / task 通用，默认 `output/`）
+- `outputFile`：单文件输出名（pipeline merged / task 通用；pipeline 默认 `pipeline.json`）
+- `outputPattern`：pipeline 非 merged 时的逐条文件名模式（如 `${Id}.json`）
+- `merged`：pipeline 是否合并为单文件（`true` 时输出 `outputDir/outputFile`）
 - `format`：默认 `true`（会把 `[...]` 数组强制为多行，不生成同一行内联数组）
-- `merged`：默认 `false`（不传 `--merged` 时生成 `${Id}.json`；传 `--merged` 或设置 `merged=true` 时生成合并后的 `pipeline.json`）
-- `taskTemplate`、`taskData`、`taskTarget`：task 增量模式的模板、数据和目标文件默认路径（可被 `generate-task.mjs` 参数覆盖）
-- task 模式也兼容 `template`、`data`、`target` 字段；优先级与 pipeline 一致：CLI > config > data
+- 兼容旧字段：task 模式仍读取 `taskTemplate` / `taskData` / `taskTarget` / `target`
 - 数值保真：当模板中使用 `"${Var}"` 作为整值占位符时，来自 `data.json` 的数字字面（例如 `5.0`）会保持原样，不会被折叠成 `5`
 
 若要指定自定义配置文件：
@@ -254,7 +255,7 @@ node generate.mjs --auto-collect route_input.json --output-dir ./pipeline
 node generate-task.mjs task_template.jsonc task_data.jsonc target_task.json
 
 # 或显式参数
-node generate-task.mjs --template task_template.jsonc --data task_data.jsonc --target target_task.json
+node generate-task.mjs --template task_template.jsonc --data task_data.jsonc --output-dir output --output-file task.json
 ```
 
 ### 全部选项
@@ -270,8 +271,10 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
 选项:
   --template <path>          task 模板文件路径
   --data <path>              task 数据源文件路径
-  --target <path>            目标 task 文件路径（单文件增量合并）
-  --config <path>            配置文件路径（支持 task* 字段，也兼容 template/data/target）
+  --output-dir <path>        输出目录（默认: output/）
+  --output-file <name>       输出文件名（推荐，与 pipeline 保持一致）
+  --target <path>            旧字段别名：完整目标路径（兼容）
+  --config <path>            配置文件路径（支持 outputDir/outputFile，也兼容 task* 与 target）
   --no-format                关闭输出格式化
   --dry-run                  仅计算与预览，不写入目标文件
   --help                     显示帮助信息
@@ -279,7 +282,7 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
 
 ### 数据源格式
 
-- `.json/.jsonc`：数组 `[{...}]`，或对象 `{ "target": "...", "data": [...] }`
+- `.json/.jsonc`：数组 `[{...}]`，或对象 `{ "outputFile": "...", "data": [...] }`
 - `.mjs`：`export default [...]` 或 `export const data = [...]`
 - 单条数据可设置 `"enabled": false`（或 `"Enabled": false`）跳过生成
 
@@ -425,7 +428,7 @@ node generate.mjs my_template.jsonc my_data.json
 node generate.mjs --template my_template.jsonc --data my_data.json
 
 # 合并输出为单文件
-node generate.mjs --merged
+node generate.mjs --merged --output-file merged-pipeline.json
 
 # 指定输出目录
 node generate.mjs --output-dir ./pipeline
@@ -445,7 +448,8 @@ node generate.mjs [模板文件] [数据文件] [选项]
   --data <path>             数据源文件路径
   --output-dir <path>       输出目录 (默认: output/)
   --output-pattern <pat>    输出文件名模式
-  --merged                  合并输出为单个 pipeline.json
+  --output-file <name>      合并输出文件名 (仅 --merged 生效，默认: pipeline.json)
+  --merged                  合并输出为单个文件（默认 pipeline.json）
   --auto-collect <path>     从 JSON 参数文件生成 AutoCollect 路线 pipeline
   --help                    显示帮助信息
 ```

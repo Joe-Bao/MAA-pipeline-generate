@@ -7,6 +7,8 @@ const positional = []
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--template' && args[i + 1]) config.template = args[++i]
   else if (args[i] === '--data' && args[i + 1]) config.data = args[++i]
+  else if (args[i] === '--output-dir' && args[i + 1]) config.outputDir = args[++i]
+  else if (args[i] === '--output-file' && args[i + 1]) config.outputFile = args[++i]
   else if (args[i] === '--target' && args[i + 1]) config.target = args[++i]
   else if (args[i] === '--config' && args[i + 1]) config.configPath = args[++i]
   else if (args[i] === '--no-format') config.format = false
@@ -23,14 +25,16 @@ for (let i = 0; i < args.length; i++) {
 选项:
   --template <path>          task 模板文件路径
   --data <path>              task 数据源文件路径
-  --target <path>            目标 task 文件路径（单文件增量合并）
-  --config <path>            配置文件路径（支持 task* 字段，也兼容 template/data/target）
+  --output-dir <path>        输出目录 (默认: output/)
+  --output-file <name>       输出文件名（推荐，与 pipeline 保持一致）
+  --target <path>            旧字段别名：完整目标路径（兼容）
+  --config <path>            配置文件路径（支持 outputDir/outputFile，也兼容 task* 与 target）
   --no-format                关闭输出格式化
   --dry-run                  仅计算与预览，不写入目标文件
   --help                     显示帮助信息
 
 数据源格式:
-  .json/.jsonc  JSON 数组 [{...}] 或带配置 { "target": "...", "data": [...] }
+  .json/.jsonc  JSON 数组 [{...}] 或带配置 { "outputFile": "...", "data": [...] }
   .mjs          JS 模块，export default [...] 或 export const data = [...]
 
 模板格式:

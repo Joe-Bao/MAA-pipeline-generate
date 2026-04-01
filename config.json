@@ -2,6 +2,7 @@
     "template": "template.jsonc",
     "data": "data.json",
     "outputDir": "output",
+    "outputFile": "pipeline.json",
     "format": true,
     "merged": false
 }
