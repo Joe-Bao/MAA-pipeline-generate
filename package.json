@@ -1,6 +1,6 @@
 {
   "name": "@joebao/maa-pipeline-generate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Batch-generate MAA pipeline JSON from templates and data (CLI + browser GUI).",
   "author": "maa-support-extension",
   "type": "module",
