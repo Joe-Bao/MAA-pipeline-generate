@@ -24,7 +24,7 @@ for (let i = 0; i < args.length; i++) {
   --template <path>          task 模板文件路径
   --data <path>              task 数据源文件路径
   --target <path>            目标 task 文件路径（单文件增量合并）
-  --config <path>            配置文件路径（支持 taskTemplate/taskData/taskTarget）
+  --config <path>            配置文件路径（支持 task* 字段，也兼容 template/data/target）
   --no-format                关闭输出格式化
   --dry-run                  仅计算与预览，不写入目标文件
   --help                     显示帮助信息

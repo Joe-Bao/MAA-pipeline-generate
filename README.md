@@ -83,6 +83,7 @@ npm run generate:task -- --template ./examples/task/template.smart.jsonc --data 
 - `format`：默认 `true`（会把 `[...]` 数组强制为多行，不生成同一行内联数组）
 - `merged`：默认 `false`（不传 `--merged` 时生成 `${Id}.json`；传 `--merged` 或设置 `merged=true` 时生成合并后的 `pipeline.json`）
 - `taskTemplate`、`taskData`、`taskTarget`：task 增量模式的模板、数据和目标文件默认路径（可被 `generate-task.mjs` 参数覆盖）
+- task 模式也兼容 `template`、`data`、`target` 字段；优先级与 pipeline 一致：CLI > config > data
 - 数值保真：当模板中使用 `"${Var}"` 作为整值占位符时，来自 `data.json` 的数字字面（例如 `5.0`）会保持原样，不会被折叠成 `5`
 
 若要指定自定义配置文件：
@@ -270,7 +271,7 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
   --template <path>          task 模板文件路径
   --data <path>              task 数据源文件路径
   --target <path>            目标 task 文件路径（单文件增量合并）
-  --config <path>            配置文件路径（支持 taskTemplate/taskData/taskTarget）
+  --config <path>            配置文件路径（支持 task* 字段，也兼容 template/data/target）
   --no-format                关闭输出格式化
   --dry-run                  仅计算与预览，不写入目标文件
   --help                     显示帮助信息
