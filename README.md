@@ -84,7 +84,7 @@ npm run generate:task -- --template ./examples/task/template.smart.jsonc --data 
 - **task 与共用 config**：数据源里的 `target` / `outputFile`（以及 CLI `--target` / `--output-file`）优先于 `config.json` 的 `outputFile`，避免与 pipeline 共用同一 `config.json` 时把任务结果误写到 `pipeline.json`
 - `outputPattern`：pipeline 非 merged 时的逐条文件名模式（如 `${Id}.json`）
 - `merged`：pipeline 是否合并为单文件（`true` 时输出 `outputDir/outputFile`）
-- `taskmode` / `taskMode` / `taskMergeMode`：是否启用 task 深度增量合并（`on` / `true` / `smart` 等；`off` 将报错；旧式浅合并已移除）
+- **`task` / `taskGenerate` / `generateTask`（与 `generate.mjs`）**：在 `config.json` 中设 `task: true`（或 `taskGenerate` / `generateTask`）时，**直接运行 `node generate.mjs` 即走 task 生成**（等价于 `generate-task.mjs`）；若只生成 pipeline 则不要写这些字段，或设 `pipeline: true` / `task: false`
 - `format`：默认 `true`（会把 `[...]` 数组强制为多行，不生成同一行内联数组）
 - 兼容旧字段：task 模式仍读取 `taskTemplate` / `taskData` / `taskTarget` / `target`
 - 数值保真：当模板中使用 `"${Var}"` 作为整值占位符时，来自 `data.json` 的数字字面（例如 `5.0`）会保持原样，不会被折叠成 `5`
@@ -248,7 +248,7 @@ node generate.mjs --auto-collect route_input.json --output-dir ./pipeline
 ## Task 增量批量生成
 
 适合 `SellProduct.json` 这种在同一文件内大量重复、只需要增量维护局部片段的场景。  
-task 生成与 pipeline 使用统一配置体系；合并语义固定为深度增量合并，可用 `taskmode: on`（或省略，默认即开启）。
+task 生成与 pipeline 使用统一配置体系；多条数据合并固定为**深度增量**（旧式浅合并已移除）。
 
 ### 命令行用法
 
@@ -276,8 +276,6 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
   --output-dir <path>        输出目录（默认: output/）
   --output-file <name>       输出文件名（推荐，与 pipeline 保持一致）
   --target <path>            旧字段别名：完整目标路径（兼容）
-  --taskmode <on|off>        是否启用 task 深度增量合并（默认 on；off 将报错）
-  --task-merge-mode <mode>   兼容旧参数，smart 等价 on；legacy 将报错
   --config <path>            配置文件路径（支持 outputDir/outputFile，也兼容 task* 与 target）
   --no-format                关闭输出格式化
   --dry-run                  仅计算与预览，不写入目标文件
@@ -302,8 +300,6 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
 - `task` 数组：按 `task.name` 合并，`option/group` 字符串数组自动去重追加
 - `option` 对象：按 `option[key]` 深度合并（同 key 递归覆盖+续写）
 - 对象数组（如 `cases`）：按 `name` 主键合并；同名递归合并，不同名追加
-
-配置或 CLI 可用 `taskmode: on`、`taskMergeMode: smart` 等显式开启；`taskmode: off` 会报错（旧浅合并已移除）。
 
 ### 示例（统一结构）
 
@@ -438,6 +434,9 @@ node generate.mjs --merged --output-file merged-pipeline.json
 
 # 指定输出目录
 node generate.mjs --output-dir ./pipeline
+
+# 与 config 中 task: true 等价：一条命令走 task 生成（无需单独运行 generate-task）
+node generate.mjs --task --template task-template.jsonc --data task-data.sample.jsonc
 ```
 
 ### 全部选项
@@ -455,6 +454,7 @@ node generate.mjs [模板文件] [数据文件] [选项]
   --output-dir <path>       输出目录 (默认: output/)
   --output-pattern <pat>    输出文件名模式
   --output-file <name>      合并输出文件名 (仅 --merged 生效，默认: pipeline.json)
+  --task                    强制走 task 生成（runTaskGenerate）；也可在 config 中写 task: true
   --merged                  合并输出为单个文件（默认 pipeline.json）
   --auto-collect <path>     从 JSON 参数文件生成 AutoCollect 路线 pipeline
   --help                    显示帮助信息

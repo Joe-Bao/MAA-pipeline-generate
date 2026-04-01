@@ -1,9 +1,14 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { resolve, join } from 'node:path'
+import { dirname, resolve, join, isAbsolute } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parse as parseJsonc } from 'jsonc-parser'
 import { runGenerate } from './lib/runGenerate.mjs'
+import { runTaskGenerate, shouldUseTaskGenerateFromConfig } from './lib/runTaskGenerate.mjs'
 import { generateAutoCollect } from './lib/generateAutoCollect.mjs'
+
+const generateScriptDir = dirname(fileURLToPath(import.meta.url))
+const defaultPackageConfigPath = resolve(generateScriptDir, 'config.json')
 
 const args = process.argv.slice(2)
 const config = {}
@@ -17,6 +22,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--output-file' && args[i + 1]) config.outputFile = args[++i]
   else if (args[i] === '--merged') config.merged = true
   else if (args[i] === '--config' && args[i + 1]) config.configPath = args[++i]
+  else if (args[i] === '--task') config.task = true
   else if (args[i] === '--auto-collect' && args[i + 1]) config.autoCollect = args[++i]
   else if (args[i] === '--help') {
     console.log(`用法: maa-pipeline-generate [模板文件] [数据文件] [选项]
@@ -36,6 +42,7 @@ for (let i = 0; i < args.length; i++) {
   --output-pattern <pat>    每条数据的输出文件名模式 (如 \${Id}.json)
   --output-file <name>      合并输出文件名 (仅 --merged 生效，默认: pipeline.json)
   --config <path>          使用 config.json（默认从包内置读取）
+  --task                    走 task 生成（同 config 中 task: true）；与 generate-task 等价
   --merged                  强制合并输出为单个 pipeline.json
   --auto-collect <path>     从 JSON 参数文件生成 AutoCollect 路线 pipeline
   --help                    显示帮助信息
@@ -98,7 +105,32 @@ if (config.autoCollect) {
 
   config.baseDir = process.cwd()
 
-  runGenerate(config).catch(err => {
+  ;(async () => {
+    const cwdConfigPath = resolve(process.cwd(), 'config.json')
+    const resolvedConfigPath = config.configPath
+      ? (isAbsolute(config.configPath) ? config.configPath : resolve(process.cwd(), config.configPath))
+      : (existsSync(cwdConfigPath) ? cwdConfigPath : defaultPackageConfigPath)
+
+    let fileCfg = {}
+    try {
+      const text = await readFile(resolvedConfigPath, 'utf-8')
+      const errors = []
+      const parsed = parseJsonc(text, errors, { allowTrailingComma: true })
+      if (parsed !== undefined && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        fileCfg = parsed
+      }
+    } catch {
+      fileCfg = {}
+    }
+
+    const merged = { ...fileCfg, ...config }
+    if (shouldUseTaskGenerateFromConfig(merged)) {
+      console.log('[generate] task → 使用 task 生成 (runTaskGenerate)')
+      await runTaskGenerate(config)
+      return
+    }
+    await runGenerate(config)
+  })().catch(err => {
     console.error(err.message || err)
     process.exit(1)
   })
