@@ -10,6 +10,8 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--output-dir' && args[i + 1]) config.outputDir = args[++i]
   else if (args[i] === '--output-file' && args[i + 1]) config.outputFile = args[++i]
   else if (args[i] === '--target' && args[i + 1]) config.target = args[++i]
+  else if (args[i] === '--taskmode' && args[i + 1]) config.taskmode = args[++i]
+  else if (args[i] === '--task-merge-mode' && args[i + 1]) config.taskMergeMode = args[++i]
   else if (args[i] === '--config' && args[i + 1]) config.configPath = args[++i]
   else if (args[i] === '--no-format') config.format = false
   else if (args[i] === '--dry-run') config.dryRun = true
@@ -28,6 +30,8 @@ for (let i = 0; i < args.length; i++) {
   --output-dir <path>        输出目录 (默认: output/)
   --output-file <name>       输出文件名（推荐，与 pipeline 保持一致）
   --target <path>            旧字段别名：完整目标路径（兼容）
+  --taskmode <on|off>        是否启用 task 深度增量合并（默认 on；off 将报错，旧浅合并已移除）
+  --task-merge-mode <mode>   兼容旧参数，仅 smart 等价 on；legacy 将报错
   --config <path>            配置文件路径（支持 outputDir/outputFile，也兼容 task* 与 target）
   --no-format                关闭输出格式化
   --dry-run                  仅计算与预览，不写入目标文件
@@ -41,9 +45,9 @@ for (let i = 0; i < args.length; i++) {
   .json/.jsonc  占位符模板（${Var}）
   .mjs          代码模板，导出 default/render/buildTaskFragment(entry, helpers)
 
-合并规则:
-  - task 数组按 task.name 覆盖（同名替换，新增追加）
-  - option 对象按 key 覆盖（同 key 替换）
+合并规则（固定为深度增量合并）:
+  - task 按 name 合并；option 按 key 深度合并；对象数组按 name 合并
+  - 配置可用 taskmode: on / taskMergeMode: smart 等（见 README）
   - 适用于“只生成局部增量并写入同一个 task 文件”`)
     process.exit(0)
   } else if (!args[i].startsWith('--')) {
