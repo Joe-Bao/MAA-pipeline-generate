@@ -313,6 +313,31 @@ node generate-task.mjs [模板文件] [数据文件] [目标文件] [选项]
 node generate-task.mjs --template ./examples/task/template.smart.jsonc --data ./examples/task/data.smart.mjs
 ```
 
+据点交易表（`settlement_trade_outposts.json`）经中间层 `data.mjs` 加工后，有两种接法：
+
+- **smart 模板**：`task-data.settlement.mjs` → `examples/task/template.smart.jsonc`，输出默认 `SellProduct.from-settlement.json`
+- **根目录 `task-template.jsonc`**（`ItemCases*` 为整段数组）：`task-data.flat-settlement.mjs`，输出 `SellProduct.task-template.json`
+
+```bash
+node generate-task.mjs --template ./task-template.jsonc --data ./task-data.flat-settlement.mjs
+```
+
+**`config.json` 示例（据点 → `task-template` 成品）**：复制仓库内 [`config.task-settlement.example.json`](config.task-settlement.example.json) 为当前目录的 `config.json`，或：
+
+```json
+{
+  "task": true,
+  "template": "task-template.jsonc",
+  "data": "task-data.flat-settlement.mjs",
+  "outputDir": "output",
+  "format": true
+}
+```
+
+然后执行 `node generate.mjs` 即可（与上面一条 `generate-task` 等价）。输出文件名默认以 **`task-data.flat-settlement.mjs` 里 `export const config` 的 `outputFile`** 为准（当前为 `SellProduct.task-template.json`）；若与根 `config.json` 的 `outputFile` 同时存在，**数据文件里的优先**。
+
+**与成品结构对齐**：仓库里若有一份参考成品（例如 `SellProduct copy.json`），其形态应为「静态 `task` + 静态大区开关 + 每条据点数据展开出的 `${RegionPrefix}${LocationId}` / Attempt / Item 节点」。**现有语法已足够**：`settlement_trade_outposts.json` → `data.mjs`（`SETTLEMENT_MAP`、`ITEM_META`、`buildItemCases`）→ 多行 `default` 数据 → `task-template.jsonc` 占位符替换 → `runTaskGenerate` 深度合并为单文件。换游戏表时主要改 **`data.mjs`**（映射与物品表）；**`task-template.jsonc`** 仅在任务层级结构变化时改。
+
 这个示例会保留 `Region -> Location -> Attempt -> Item` 层级在 template 中：
 - 区域开关
 - 点位开关
