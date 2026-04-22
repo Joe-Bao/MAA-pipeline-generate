@@ -47,7 +47,7 @@ node scripts/download-portable-node.mjs win-x64    # 或 linux-x64 / darwin-x64 
 - 模板驱动：用 `${Var}` 占位符编写模板，自动填充数据
 - 类型感知：`"${Var}"` 作为整值时自动替换为数组、对象等原始类型
 - 注释保留：模板中的 `//` 和 `/* */` 注释会保留到输出文件
-- 语义校验：基于 `@nekosu/maa-pipeline-manager` 的 `parseTask` 对生成结果做语义分析
+- 可选语义校验：需要时在生成后用 `@nekosu/maa-pipeline-manager` 的 `parseTask` 对输出做诊断（CLI `--semantic-check`、config `semanticCheck` 或 Web 勾选项，默认不启用）
 - 独立文件输出：每条数据生成独立文件，文件名支持变量（如 `${Id}.json`）
 - 支持 JSON / JSONC（含注释和尾逗号）
 - 输出 JSON 会自动格式化：所有 `[...]` 数组都会强制换行输出，不会生成同一行内联数组
@@ -481,13 +481,14 @@ node generate.mjs [模板文件] [数据文件] [选项]
   --output-file <name>      合并输出文件名 (仅 --merged 生效，默认: pipeline.json)
   --task                    强制走 task 生成（runTaskGenerate）；也可在 config 中写 task: true
   --merged                  合并输出为单个文件（默认 pipeline.json）
+  --semantic-check          生成后做 MAA 语义/引用诊断（默认关闭；也可在 config 或 data 根设 `semanticCheck: true`）
   --auto-collect <path>     从 JSON 参数文件生成 AutoCollect 路线 pipeline
   --help                    显示帮助信息
 ```
 
-## 语义校验
+## 语义校验（可选）
 
-生成后会自动对输出进行 MAA pipeline 语义校验，报告：
+在启用时（见上）会对输出进行 MAA pipeline 语义校验，报告：
 
 - **未指定 recognition 类型**的任务
 - **引用了未定义任务**的 next / target / reco

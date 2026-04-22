@@ -61,7 +61,8 @@ $('btnRun').addEventListener('click', async () => {
       data,
       outputDir: $('outputDir').value.trim() || undefined,
       outputPattern: $('outputPattern').value.trim() || undefined,
-      merged: $('merged').checked
+      merged: $('merged').checked,
+      semanticCheck: $('semanticCheck').checked
     }
 
     const res = await fetch('/api/generate', {

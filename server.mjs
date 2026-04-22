@@ -103,7 +103,8 @@ async function handleGenerate(body) {
         data: dataPath,
         outputDir: payload.outputDir || undefined,
         outputPattern: payload.outputPattern || undefined,
-        merged: Boolean(payload.merged)
+        merged: Boolean(payload.merged),
+        semanticCheck: Boolean(payload.semanticCheck)
       },
       {
         onLog(level, message) {

@@ -21,6 +21,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--output-pattern' && args[i + 1]) config.outputPattern = args[++i]
   else if (args[i] === '--output-file' && args[i + 1]) config.outputFile = args[++i]
   else if (args[i] === '--merged') config.merged = true
+  else if (args[i] === '--semantic-check') config.semanticCheck = true
   else if (args[i] === '--config' && args[i + 1]) config.configPath = args[++i]
   else if (args[i] === '--task') config.task = true
   else if (args[i] === '--auto-collect' && args[i + 1]) config.autoCollect = args[++i]
@@ -44,6 +45,7 @@ for (let i = 0; i < args.length; i++) {
   --config <path>          使用 config.json（默认从包内置读取）
   --task                    走 task 生成（同 config 中 task: true）；与 generate-task 等价
   --merged                  强制合并输出为单个 pipeline.json
+  --semantic-check          生成后用 parseTask 做语义/引用诊断（默认关闭，也可在 config.json 设 semanticCheck）
   --auto-collect <path>     从 JSON 参数文件生成 AutoCollect 路线 pipeline
   --help                    显示帮助信息
 

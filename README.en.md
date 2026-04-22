@@ -47,7 +47,7 @@ In **this tool’s own repository**, pushing tag **`maa-generate-v*`** (e.g. `ma
 - Template-driven: Use `${Var}` placeholders in templates, values are filled automatically
 - Type-aware: `"${Var}"` as a full value is replaced with the raw type (array, object, number, etc.)
 - Comment preservation: `//` and `/* */` comments in templates are preserved in the output
-- Semantic validation: Uses `@nekosu/maa-pipeline-manager`'s `parseTask` for semantic analysis
+- Optional semantic checks: `parseTask` from `@nekosu/maa-pipeline-manager` can diagnose output when enabled (CLI `--semantic-check`, `semanticCheck` in config, or the web UI checkbox; off by default)
 - Per-entry output: Each data entry can generate a separate file, filename supports variables (e.g. `${Id}.json`)
 - Supports JSON / JSONC (comments and trailing commas)
 - Output is automatically formatted: all `[...]` arrays are expanded to multi-line form (no inline arrays on the same line)
@@ -357,13 +357,14 @@ Options:
   --output-dir <path>         Output directory (default: output/)
   --output-pattern <pat>      Output filename pattern
   --merged                    Merge output into single pipeline.json
+  --semantic-check            Run MAA semantic/reference diagnostics after generate (off by default; or set `semanticCheck: true` in config / data root)
   --auto-collect <path>       Generate AutoCollect route pipeline from JSON input
   --help                      Show help
 ```
 
-## Semantic Validation
+## Semantic Validation (optional)
 
-After generation, output is validated against MAA pipeline semantics. It reports:
+When enabled, output is validated against MAA pipeline semantics. It reports:
 
 - Tasks **without recognition type**
 - **References to undefined tasks** in next / target / reco
