@@ -133,14 +133,15 @@ async function handleAutoCollect(body) {
   logs.push({ level: 'log', message: `[auto-collect] 导航方式: ${params.Map_way}` })
   logs.push({ level: 'log', message: `[auto-collect] 路线编号: ${params.route_id}` })
 
-  const { fileName, content } = generateAutoCollect(params)
-
   const outputDir = params.outputDir
     ? join(process.cwd(), params.outputDir)
     : join(root, 'output')
 
   await mkdir(outputDir, { recursive: true })
+  const fileName = `AutoCollectRoute${params.route_id}.json`
   const filePath = join(outputDir, fileName)
+  const generated = await generateAutoCollect(params, { baseDir: process.cwd(), filePath })
+  const content = generated.content
   await writeFile(filePath, content, 'utf8')
 
   logs.push({ level: 'log', message: `[auto-collect] 已生成: ${filePath}` })

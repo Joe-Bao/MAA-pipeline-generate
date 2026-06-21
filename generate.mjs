@@ -87,7 +87,7 @@ if (config.autoCollect) {
     console.log(`[auto-collect] 导航方式: ${params.Map_way}`)
     console.log(`[auto-collect] 路线编号: ${params.route_id}`)
 
-    const { fileName, content } = generateAutoCollect(params)
+    const { fileName, content } = await generateAutoCollect(params, { baseDir: process.cwd() })
 
     if (!existsSync(outputDir)) {
       await mkdir(outputDir, { recursive: true })
